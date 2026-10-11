@@ -31,7 +31,7 @@ the rehype pass, registered separately.
 
 Validates `PluginOptions` by hand. The site mixes the plugin's schema into
 its own joi instance, and a second joi copy fails to mix, so the plugin
-ships plain checks instead of a joi schema.
+ships plain checks.
 
 ### Options
 

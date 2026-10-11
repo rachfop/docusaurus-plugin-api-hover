@@ -85,11 +85,13 @@ function annotatePythonCode(code: Element, index: ApiHoverIndex): void {
   // 1. Split every text node (at any highlighting-span depth) into pieces,
   //    with offsets into the code element's full text.
   const pieces: TextPiece[] = [];
+  const nodeStart = new Map<Text, number>();
   const walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
   let offset = 0;
   while (walker.nextNode()) {
     const node = walker.currentNode as Text;
     const value = node.nodeValue ?? '';
+    nodeStart.set(node, offset);
     let pos = offset;
     for (const part of value.split(IDENT_SPLIT_RE)) {
       if (part) {
@@ -139,7 +141,9 @@ function annotatePythonCode(code: Element, index: ApiHoverIndex): void {
   }
 
   // 3. Apply the wraps, back-to-front within each text node so earlier
-  //    offsets stay valid while the node is split.
+  //    offsets stay valid while the node is split. splitText takes an
+  //    index relative to the node's own text, while the wrap offsets are
+  //    absolute in the code element, so subtract the node's start.
   const byNode = new Map<Text, typeof wraps>();
   for (const w of wraps) {
     const bucket = byNode.get(w.node);
@@ -147,10 +151,11 @@ function annotatePythonCode(code: Element, index: ApiHoverIndex): void {
     else byNode.set(w.node, [w]);
   }
   for (const [node, ranges] of byNode) {
+    const base = nodeStart.get(node) ?? 0;
     ranges.sort((a, b) => b.start - a.start);
     for (const w of ranges) {
-      node.splitText(w.end);
-      const target = node.splitText(w.start);
+      node.splitText(w.end - base);
+      const target = node.splitText(w.start - base);
       const span = document.createElement('span');
       span.setAttribute('data-api-id', w.id);
       target.replaceWith(span);

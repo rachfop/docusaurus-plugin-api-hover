@@ -24,27 +24,48 @@ async function run(cmd, args, opts = {}) {
   if (code !== 0) throw new Error(`${cmd} ${args.join(' ')} exited with ${code}`);
 }
 
-async function waitUntilUp() {
+async function portAnswers() {
+  try {
+    await fetch(`http://127.0.0.1:${PORT}/`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function waitUntilUp(server) {
+  // A server that dies while we wait means the port or the build is
+  // broken; fail fast so the caller learns why.
+  const dead = new Promise((resolve) => server.once('exit', resolve));
   for (let i = 0; i < 60; i++) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) return;
-    } catch {
-      // server not accepting connections yet
-    }
-    await delay(500);
+    if (await portAnswers()) return;
+    const exited = await Promise.race([dead.then(() => true), delay(500).then(() => false)]);
+    if (exited) throw new Error('blume preview exited before accepting connections');
   }
   throw new Error(`preview server never answered at ${url}`);
+}
+
+if (await portAnswers()) {
+  throw new Error(
+    `port ${PORT} is already in use (stale preview server?); ` +
+      'kill it before capturing, or the capture may shoot the wrong site',
+  );
 }
 
 if (!process.argv.includes('--no-build')) {
   await run('npm', ['run', 'build']);
 }
-const server = spawn('npx', ['blume', 'preview', `--port=${PORT}`, '--host=127.0.0.1'], {
-  stdio: 'ignore',
-});
+// Spawn the blume binary directly (not through npx): kill() then reaches
+// the actual preview server, not just a wrapper around it.
+const server = spawn('node_modules/.bin/blume', ['preview', `--port=${PORT}`, '--host=127.0.0.1']);
 try {
-  await waitUntilUp();
+  await waitUntilUp(server);
+  // The port answers; now the page itself must. A non-OK response here
+  // is a bad --url-path, not a slow server.
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`preview server answered ${res.status} at ${url} (bad --url-path?)`);
+  }
   await run('node', ['scripts/capture-hover.mjs', '--url', url]);
 } finally {
   server.kill();

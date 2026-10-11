@@ -194,7 +194,12 @@ export default function ApiHoverRuntime({ children }: { children: ReactNode }): 
       // Moving straight from the token/tooltip to another symbol keeps
       // the current tooltip until the new one settles.
       cancelHide();
-      if (id === shownIdRef.current) return;
+      if (id === shownIdRef.current) {
+        // Back on the shown token: a pending timer armed for another symbol
+        // must die, or its tooltip would pop while the pointer rests here.
+        cancelPending();
+        return;
+      }
       // Fresh target: restart the settle timer. If the pointer is really
       // resting, this fires; if it keeps moving, onMouseMove keeps pushing
       // the timer out so a pass-through never pops the tooltip.
@@ -209,7 +214,9 @@ export default function ApiHoverRuntime({ children }: { children: ReactNode }): 
         y: e.clientY,
         timer: setTimeout(() => {
           pendingRef.current = null;
-          show(el, id);
+          // A rerender can unmount the token during the settle delay; the
+          // token is gone, so is the hover.
+          if (el.isConnected) show(el, id);
         }, HOVER_DELAY_MS),
       };
     };
@@ -244,6 +251,9 @@ export default function ApiHoverRuntime({ children }: { children: ReactNode }): 
         cancelHide();
         return;
       }
+      // Off the token entirely: the pending settle timer dies with it, or
+      // the tooltip would pop under a pointer resting on plain text.
+      cancelPending();
       scheduleHide();
     };
 

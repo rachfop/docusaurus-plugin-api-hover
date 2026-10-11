@@ -15,11 +15,21 @@ import baseStyles from '../theme/styles.css?inline';
 import themeStyles from './theme.css?inline';
 import { initApiHover } from './runtime';
 
-if (!document.querySelector('style[data-api-hover]')) {
+function ensureStyles(): void {
+  // Astro's view transitions swap head elements wholesale: a style that
+  // exists only in the rendered page's head (like this one) is removed on
+  // the first client-side navigation. astro:page-load fires after every
+  // swap, so the styles survive navigation.
+  if (document.querySelector('style[data-api-hover]')) return;
   const style = document.createElement('style');
   style.setAttribute('data-api-hover', '');
   style.textContent = `${baseStyles}\n${themeStyles}`;
   document.head.append(style);
 }
+
+ensureStyles();
+// Dispatched on document by Astro's view transitions; it does not bubble,
+// so a window listener would never see it.
+document.addEventListener('astro:page-load', ensureStyles);
 
 void initApiHover(config);

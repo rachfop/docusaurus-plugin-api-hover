@@ -8,7 +8,7 @@
   "validateOptions": {
     "kind": "function",
     "sig": "validateOptions({ options }): PluginOptions",
-    "doc": "Validates the plugin options; the site mixes this into its own joi schema.",
+    "doc": "Validates PluginOptions by hand; a second joi copy fails to mix, so the plugin ships plain checks.",
     "url": "/docusaurus-plugin-api-hover/api-reference#validateoptions"
   },
   "rehypeApiHover": {

@@ -35,12 +35,6 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             website/package-lock.json
-      - name: Restore OG card cache
-        uses: actions/cache@v4
-        with:
-          path: website/node_modules/.cache/blume/og
-          key: blume-og-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}
-          restore-keys: blume-og-${{ runner.os }}-
       - name: Build the plugin
         run: |
           npm ci
@@ -48,6 +42,14 @@ jobs:
       - name: Install website dependencies
         run: npm ci
         working-directory: website
+      # Restored after npm ci: it wipes node_modules, so a restore before
+      # it would be destroyed before any build reads it.
+      - name: Restore OG card cache
+        uses: actions/cache@v4
+        with:
+          path: website/node_modules/.cache/blume/og
+          key: blume-og-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}
+          restore-keys: blume-og-${{ runner.os }}-
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
         working-directory: website
@@ -80,7 +82,9 @@ jobs:
             echo "screenshots unchanged"
           else
             git commit -m "Docs: regenerate hover screenshots"
-            git push
+            # Bookkeeping only: the artifact is already uploaded, so a
+            # rejected push (main moved) must not block the deploy.
+            git push || echo "::warning::push rejected (main moved); screenshots not committed"
           fi
 
   deploy:

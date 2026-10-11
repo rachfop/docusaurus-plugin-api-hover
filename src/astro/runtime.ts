@@ -288,7 +288,12 @@ function onMouseOver(e: MouseEvent): void {
   // Moving straight from the token/tooltip to another symbol keeps the
   // current tooltip until the new one settles.
   cancelHide();
-  if (id === shownId) return;
+  if (id === shownId) {
+    // Back on the shown token: a pending timer armed for another symbol
+    // must die, or its tooltip would pop while the pointer rests here.
+    cancelPending();
+    return;
+  }
   // Fresh target: restart the settle timer. If the pointer is really
   // resting, this fires; if it keeps moving, onMouseMove keeps pushing
   // the timer out so a pass-through never pops the tooltip.
@@ -303,7 +308,9 @@ function onMouseOver(e: MouseEvent): void {
     y: e.clientY,
     timer: setTimeout(() => {
       pending = null;
-      show(el, id);
+      // A view transition can swap the page out from under the pointer
+      // during the settle delay; the token is gone, so is the hover.
+      if (el.isConnected) show(el, id);
     }, HOVER_DELAY_MS),
   };
 }
@@ -336,6 +343,9 @@ function onMouseOut(e: MouseEvent): void {
     cancelHide();
     return;
   }
+  // Off the token entirely: the pending settle timer dies with it, or
+  // the tooltip would pop under a pointer resting on plain text.
+  cancelPending();
   scheduleHide();
 }
 
@@ -387,8 +397,10 @@ export async function initApiHover(config: ApiHoverClientConfig): Promise<void> 
   }
   annotateDomDocument(index, config.languages);
   // Astro view transitions replace the page content without a reload;
-  // the document-level listeners survive, the annotations don't.
-  window.addEventListener('astro:page-load', () => {
+  // the document-level listeners survive, the annotations don't. The
+  // event is dispatched on document and does not bubble, so the listener
+  // must live on document, not window.
+  document.addEventListener('astro:page-load', () => {
     annotateDomDocument(index, config.languages);
   });
 }

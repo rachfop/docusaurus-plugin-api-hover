@@ -14,7 +14,9 @@
  * The options reach the browser through a Vite virtual module
  * (`virtual:api-hover/config`) so no global state or generated file is
  * needed; the entry (`./astro-client`) is injected with Astro's
- * injectScript, which Vite resolves through the package exports.
+ * injectScript, and the integration's Vite plugin redirects that import
+ * to the client's TypeScript source so dev and build resolve it the
+ * same way.
  *
  * The export shape is `export =` (module.exports is the factory itself,
  * the classic Express-style pattern): loaders that natively import the
@@ -23,9 +25,12 @@
  * directly.
  */
 import type { ApiHoverClientConfig } from './runtime';
+import path from 'path';
 
 type InjectScript = (stage: 'page' | 'before-hydration', content: string) => void;
-type UpdateConfig = (config: { vite?: { plugins?: unknown[] } }) => void;
+type UpdateConfig = (config: {
+  vite?: { plugins?: unknown[]; optimizeDeps?: { exclude?: string[] } };
+}) => void;
 
 interface ConfigSetupParams {
   injectScript: InjectScript;
@@ -34,12 +39,24 @@ interface ConfigSetupParams {
 
 const VIRTUAL_ID = 'virtual:api-hover/config';
 const RESOLVED_VIRTUAL_ID = `\0${VIRTUAL_ID}`;
+const CLIENT_ID = 'docusaurus-plugin-api-hover/astro-client';
 
 function configVitePlugin(config: ApiHoverClientConfig) {
   return {
     name: 'api-hover-config',
+    // pre: Vite's own resolver would claim the bare client specifier via
+    // the package exports before this plugin could redirect it to source.
+    enforce: 'pre' as const,
     resolveId(id: string) {
-      return id === VIRTUAL_ID ? RESOLVED_VIRTUAL_ID : null;
+      if (id === VIRTUAL_ID) return RESOLVED_VIRTUAL_ID;
+      // The client entry resolves to its TypeScript source in dev and
+      // build alike. The compiled CJS client cannot run as a browser
+      // module, and Vite's dev optimizer cannot prebundle it: the
+      // virtual-module and ?inline imports only resolve inside Vite's own
+      // pipeline. Kept out of optimization (below), the source flows
+      // through the normal transform pipeline instead.
+      if (id === CLIENT_ID) return path.resolve(__dirname, '../../src/astro/client.ts');
+      return null;
     },
     load(id: string) {
       return id === RESOLVED_VIRTUAL_ID ? `export default ${JSON.stringify(config)}` : null;
@@ -82,7 +99,15 @@ function apiHover(options: apiHover.ApiHoverAstroOptions): apiHover.ApiHoverInte
     name: 'docusaurus-plugin-api-hover',
     hooks: {
       'astro:config:setup': ({ injectScript, updateConfig }: ConfigSetupParams) => {
-        updateConfig({ vite: { plugins: [configVitePlugin(config)] } });
+        updateConfig({
+          vite: {
+            plugins: [configVitePlugin(config)],
+            // Dev: the client entry is transformed from source, so it must
+            // stay out of the dep optimizer (which would prebundle the
+            // CJS build and fail on the virtual-module import).
+            optimizeDeps: { exclude: ['docusaurus-plugin-api-hover'] },
+          },
+        });
         injectScript('page', "import 'docusaurus-plugin-api-hover/astro-client';");
       },
     },
@@ -97,8 +122,9 @@ namespace apiHover {
    */
   export type ApiHoverAstroOptions = {
     namesUrl: string;
-    /** URL the runtime fetches the info JSON from (with ?v=version appended). */
-    infoUrl: string;
+    /** URL the runtime fetches the info JSON from (with ?v=version appended).
+     * Defaults to /data/api-hover-info.json. */
+    infoUrl?: string;
     /**
      * Id prefixes that win a short-name collision, e.g. ["max."] on a site
      * that indexes both MAX symbols and Python stdlib ids.
