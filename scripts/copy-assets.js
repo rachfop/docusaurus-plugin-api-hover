@@ -5,10 +5,9 @@ const { copyFileSync, mkdirSync, existsSync } = require('fs');
 const path = require('path');
 
 const pairs = [
-  ['src/theme/styles.css', 'lib/theme/styles.css'],
+  ['src/browser/styles.css', 'lib/browser/styles.css'],
   ['src/fallback-data.json', 'lib/fallback-data.json'],
   ['src/fallback-config.json', 'lib/fallback-config.json'],
-  ['src/astro/theme.css', 'lib/astro/theme.css'],
 ];
 
 for (const [from, to] of pairs) {

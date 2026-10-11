@@ -1,0 +1,171 @@
+/**
+ * Styles for quickinfo hovers (see browser/hover.ts).
+ *
+ * Hoverable identifiers get a dotted underline; hovering highlights every
+ * instance of the same symbol on the page and opens an IDE-style tooltip
+ * with the signature and docstring summary.
+ *
+ * Colors come from the `--quickinfo-*` variables below, which default to
+ * the host theme's own palette: Docusaurus (`--ifm-*`), MkDocs Material
+ * (`--md-*`), Sphinx Furo (`--color-*`), Blume (`--blume-*`), then a light
+ * fallback. They're set on body, where those themes define their light
+ * and dark palettes, so the tooltip follows the site's color scheme.
+ * Override any of them in your own CSS.
+ */
+body {
+  --quickinfo-bg: var(
+    --ifm-background-surface-color,
+    var(--md-default-bg-color, var(--color-background-primary, var(--blume-background, #fff)))
+  );
+  --quickinfo-fg: var(
+    --ifm-font-color-base,
+    var(--md-default-fg-color, var(--color-foreground-primary, var(--blume-foreground, #222)))
+  );
+  --quickinfo-border: var(
+    --ifm-color-emphasis-300,
+    var(--md-default-fg-color--lightest, var(--color-background-border, var(--blume-border, #bbb)))
+  );
+  --quickinfo-underline: var(
+    --ifm-color-emphasis-400,
+    var(
+      --md-default-fg-color--light,
+      var(--color-foreground-muted, var(--blume-muted-foreground, #999))
+    )
+  );
+  --quickinfo-highlight: var(
+    --ifm-color-emphasis-200,
+    var(
+      --md-accent-fg-color--transparent,
+      var(--color-highlighted-background, var(--blume-muted, #eee))
+    )
+  );
+  --quickinfo-code-bg: var(
+    --ifm-color-emphasis-100,
+    var(--md-code-bg-color, var(--color-code-background, var(--blume-code-background, #f5f5f5)))
+  );
+  --quickinfo-accent: var(
+    --ifm-color-primary,
+    var(--md-accent-fg-color, var(--color-brand-primary, var(--blume-accent, #02a17e)))
+  );
+  --quickinfo-link: var(
+    --ifm-link-color,
+    var(--md-typeset-a-color, var(--color-link, var(--blume-accent, #02a17e)))
+  );
+  --quickinfo-mono: var(
+    --ifm-font-family-monospace,
+    var(
+      --md-code-font-family,
+      var(--font-stack--monospace, 'Roboto Mono', 'PT Mono', 'Courier New', Courier, monospace)
+    )
+  );
+}
+
+/* The underline affordance only makes sense where a pointer can hover; on
+ * touch devices the annotation stays inert. */
+@media (hover: hover) {
+  [data-api-id] {
+    text-decoration: underline dotted;
+    text-decoration-color: var(--quickinfo-underline);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-skip-ink: none;
+  }
+}
+
+.quickinfo-hl {
+  background: var(--quickinfo-highlight);
+  border-radius: 2px;
+}
+
+.quickinfo-tooltip {
+  position: fixed;
+  z-index: 1000;
+  background: var(--quickinfo-bg);
+  color: var(--quickinfo-fg);
+  border: 1px solid var(--quickinfo-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  padding: 0.75rem 0.9rem;
+  font-size: 0.85rem;
+  /* Always fits the viewport vertically; placement assumes this bound, and
+   * the runtime measures the resulting (clamped) height before positioning. */
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  animation: quickinfo-in 100ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+@keyframes quickinfo-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quickinfo-tooltip {
+    animation: none;
+  }
+}
+
+.quickinfo-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.quickinfo-kind {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--quickinfo-accent);
+  border: 1px solid var(--quickinfo-border);
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+}
+
+.quickinfo-name {
+  font-family: var(--quickinfo-mono);
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
+.quickinfo-sig {
+  margin: 0 0 0.45rem;
+  padding: 0.45rem 0.55rem;
+  background: var(--quickinfo-code-bg);
+  border-radius: 6px;
+  border-left: 3px solid var(--quickinfo-accent);
+}
+
+.quickinfo-sig code {
+  font-family: var(--quickinfo-mono);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.quickinfo-doc {
+  color: var(--quickinfo-fg);
+  line-height: 1.45;
+  margin-bottom: 0.45rem;
+}
+
+.quickinfo-link {
+  font-size: 0.78rem;
+  color: var(--quickinfo-link);
+}
+
+/* Tooltips should never be reachable by the underline affordance rules. */
+@media (hover: hover) {
+  .quickinfo-tooltip [data-api-id] {
+    text-decoration: none;
+  }
+}

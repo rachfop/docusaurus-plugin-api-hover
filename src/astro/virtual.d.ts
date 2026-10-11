@@ -1,6 +1,6 @@
-declare module 'virtual:api-hover/config' {
-  import type { ApiHoverClientConfig } from './runtime';
-  const config: ApiHoverClientConfig;
+declare module 'virtual:quickinfo/config' {
+  import type { QuickinfoClientConfig } from '../browser/init';
+  const config: QuickinfoClientConfig;
   export default config;
 }
 

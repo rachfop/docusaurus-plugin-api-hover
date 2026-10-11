@@ -15,7 +15,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 const PORT = 4199;
 const urlPath = process.argv.includes('--url-path')
   ? process.argv[process.argv.indexOf('--url-path') + 1]
-  : '/docusaurus-plugin-api-hover/api-reference';
+  : '/quickinfo/api-reference';
 const url = `http://127.0.0.1:${PORT}${urlPath}`;
 
 async function run(cmd, args, opts = {}) {

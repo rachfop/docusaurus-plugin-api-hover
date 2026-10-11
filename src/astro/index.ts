@@ -1,6 +1,6 @@
 /**
  * Astro integration for IDE-style API hover on Astro sites, Blume
- * included: `apiHover()` from `docusaurus-plugin-api-hover/astro`.
+ * included: `quickinfo()` from `quickinfo/astro`.
  *
  * Unlike the Docusaurus theme, which annotates at build time off the
  * prism token stream, this integration annotates in the browser: one
@@ -12,7 +12,7 @@
  * and lets it work identically in dev and production.
  *
  * The options reach the browser through a Vite virtual module
- * (`virtual:api-hover/config`) so no global state or generated file is
+ * (`virtual:quickinfo/config`) so no global state or generated file is
  * needed; the entry (`./astro-client`) is injected with Astro's
  * injectScript, and the integration's Vite plugin redirects that import
  * to the client's TypeScript source so dev and build resolve it the
@@ -24,8 +24,9 @@
  * named exports through interop, and plain require() calls the function
  * directly.
  */
-import type { ApiHoverClientConfig } from './runtime';
 import path from 'path';
+import type { QuickinfoClientConfig } from '../browser/init';
+import { checkCommonOptions, DEFAULT_INFO_URL, DEFAULT_NAMES_URL, withBase } from '../lib/options';
 
 type InjectScript = (stage: 'page' | 'before-hydration', content: string) => void;
 type UpdateConfig = (config: {
@@ -33,17 +34,18 @@ type UpdateConfig = (config: {
 }) => void;
 
 interface ConfigSetupParams {
+  config?: { base?: string };
   injectScript: InjectScript;
   updateConfig: UpdateConfig;
 }
 
-const VIRTUAL_ID = 'virtual:api-hover/config';
+const VIRTUAL_ID = 'virtual:quickinfo/config';
 const RESOLVED_VIRTUAL_ID = `\0${VIRTUAL_ID}`;
-const CLIENT_ID = 'docusaurus-plugin-api-hover/astro-client';
+const CLIENT_ID = 'quickinfo/astro-client';
 
-function configVitePlugin(config: ApiHoverClientConfig) {
+function configVitePlugin(config: QuickinfoClientConfig) {
   return {
-    name: 'api-hover-config',
+    name: 'quickinfo-config',
     // pre: Vite's own resolver would claim the bare client specifier via
     // the package exports before this plugin could redirect it to source.
     enforce: 'pre' as const,
@@ -64,82 +66,100 @@ function configVitePlugin(config: ApiHoverClientConfig) {
   };
 }
 
-function apiHover(options: apiHover.ApiHoverAstroOptions): apiHover.ApiHoverIntegration {
-  if (typeof options !== 'object' || options === null) {
-    throw new Error('api-hover: options must be an object');
+/**
+ * The Astro integration, for Blume and plain Astro sites. Injects one
+ * script on every page that fetches the names JSON, stamps `data-api-id`
+ * onto prose mentions and Python code blocks in the DOM, and wires the
+ * tooltip. Annotation runs in the browser, so it works with any Markdown
+ * processor and behaves the same in dev and production.
+ *
+ * @param options Integration options.
+ * @returns The Astro integration to add to `integrations`.
+ * @example
+ * ```ts
+ * import quickinfo from 'quickinfo/astro';
+ * import { defineConfig } from 'astro/config';
+ *
+ * // Serves public/quickinfo/names.json and info.json; no options needed.
+ * export default defineConfig({
+ *   integrations: [quickinfo()],
+ * });
+ * ```
+ */
+function quickinfo(options?: quickinfo.QuickinfoAstroOptions): quickinfo.QuickinfoIntegration {
+  if (options !== undefined && (typeof options !== 'object' || options === null)) {
+    throw new Error('quickinfo: options must be an object');
   }
-  if (typeof options.namesUrl !== 'string' || options.namesUrl.length === 0) {
-    throw new Error('api-hover: "namesUrl" is required (URL of the names JSON)');
-  }
-  if (options.infoUrl !== undefined && typeof options.infoUrl !== 'string') {
-    throw new Error('api-hover: "infoUrl" must be a string');
-  }
-  for (const key of ['preferPrefixes', 'languages'] as const) {
-    const value = options[key];
-    if (
-      value !== undefined &&
-      (!Array.isArray(value) || value.some((v) => typeof v !== 'string'))
-    ) {
-      throw new Error(`api-hover: "${key}" must be an array of strings`);
-    }
-  }
-  const invalid = (options.languages as unknown[] | undefined)?.filter((lang) => lang !== 'python');
-  if (invalid && invalid.length > 0) {
-    throw new Error(
-      `api-hover: unknown languages ${JSON.stringify(invalid)}; ` + 'built in: "python"',
-    );
-  }
-  const config: ApiHoverClientConfig = {
-    namesUrl: options.namesUrl,
-    infoUrl: options.infoUrl || '/data/api-hover-info.json',
-    preferPrefixes: options.preferPrefixes ?? [],
-    languages: options.languages ?? ['python'],
-  };
+  const raw = options ?? {};
+  checkCommonOptions(raw as Record<string, unknown>);
   return {
-    name: 'docusaurus-plugin-api-hover',
+    name: 'quickinfo',
     hooks: {
-      'astro:config:setup': ({ injectScript, updateConfig }: ConfigSetupParams) => {
+      'astro:config:setup': ({
+        config: astroConfig,
+        injectScript,
+        updateConfig,
+      }: ConfigSetupParams) => {
+        // Root-relative URLs get the site's base path, so the defaults
+        // work on a site served under a subpath.
+        const base = astroConfig?.base;
+        const config: QuickinfoClientConfig = {
+          namesUrl: withBase(raw.namesUrl ?? DEFAULT_NAMES_URL, base),
+          infoUrl: withBase(raw.infoUrl ?? DEFAULT_INFO_URL, base),
+          preferPrefixes: raw.preferPrefixes ?? [],
+          languages: raw.languages ?? ['python'],
+        };
         updateConfig({
           vite: {
             plugins: [configVitePlugin(config)],
             // Dev: the client entry is transformed from source, so it must
             // stay out of the dep optimizer (which would prebundle the
             // CJS build and fail on the virtual-module import).
-            optimizeDeps: { exclude: ['docusaurus-plugin-api-hover'] },
+            optimizeDeps: { exclude: ['quickinfo'] },
           },
         });
-        injectScript('page', "import 'docusaurus-plugin-api-hover/astro-client';");
+        injectScript('page', "import 'quickinfo/astro-client';");
       },
     },
   };
 }
 
-namespace apiHover {
-  /**
-   * URL the browser fetches the names JSON from (the index generator's
-   * output, served as a static file). Shape:
-   * {ids: string[], bases?: Record<string, string[]>, version?: string}.
-   */
-  export type ApiHoverAstroOptions = {
-    namesUrl: string;
-    /** URL the runtime fetches the info JSON from (with ?v=version appended).
-     * Defaults to /data/api-hover-info.json. */
+namespace quickinfo {
+  /** Options for the Astro integration, passed to `quickinfo()`. */
+  export type QuickinfoAstroOptions = {
+    /**
+     * URL the browser fetches the names JSON from. A root-relative URL
+     * gets the site's `base` prefixed. Shape:
+     * `{ids: string[], bases?: Record<string, string[]>, version?: string}`.
+     * @default '/quickinfo/names.json'
+     */
+    namesUrl?: string;
+    /**
+     * URL the runtime fetches the info JSON from, with `?v=<version>`
+     * appended from the names JSON. A root-relative URL gets the site's
+     * `base` prefixed.
+     * @default '/quickinfo/info.json'
+     */
     infoUrl?: string;
     /**
-     * Id prefixes that win a short-name collision, e.g. ["max."] on a site
+     * Id prefixes that win a short-name collision, e.g. `["max."]` on a site
      * that indexes both MAX symbols and Python stdlib ids.
+     * @default []
      */
     preferPrefixes?: string[];
-    /** Language modules to enable for code annotation. Built in: "python". */
+    /**
+     * Language modules to enable for code annotation. Built in: `"python"`.
+     * @default ['python']
+     */
     languages?: string[];
   };
 
-  export type ApiHoverClientConfig = import('./runtime').ApiHoverClientConfig;
+  export type QuickinfoClientConfig = import('../browser/init').QuickinfoClientConfig;
 
-  export type ApiHoverIntegration = {
+  export type QuickinfoIntegration = {
     name: string;
     hooks: { 'astro:config:setup': (params: ConfigSetupParams) => void };
   };
 }
 
-export = apiHover;
+export = quickinfo;

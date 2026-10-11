@@ -1,8 +1,11 @@
 {
-  "name": "docusaurus-plugin-api-hover-website",
+  "name": "quickinfo-website",
   "private": true,
   "type": "module",
   "scripts": {
+    "gen:api": "node scripts/gen-api.mjs",
+    "predev": "node scripts/gen-api.mjs",
+    "prebuild": "node scripts/gen-api.mjs",
     "dev": "blume dev",
     "build": "blume build",
     "preview": "blume preview",
@@ -10,7 +13,7 @@
   },
   "dependencies": {
     "blume": "^2.2.2",
-    "docusaurus-plugin-api-hover": "file:.."
+    "quickinfo": "file:.."
   },
   "devDependencies": {
     "playwright": "^1.64.0"

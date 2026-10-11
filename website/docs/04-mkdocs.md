@@ -1,0 +1,56 @@
+---
+title: Set up MkDocs
+description: Add quickinfo hovers to an MkDocs site with mkdocstrings.
+---
+
+On MkDocs with [mkdocstrings](https://mkdocstrings.github.io/), the symbol
+data comes from the site itself. mkdocstrings writes `objects.inv`, an
+inventory of every documented object with its kind and anchor. The
+`quickinfo build` command reads it, takes signatures, docstring summaries,
+and base classes from the API pages, and writes the data files with the
+hover script beside them.
+
+## Configure MkDocs
+
+Load the script, and have Pygments mark each code block's language:
+
+```yaml
+extra_javascript:
+  - path: quickinfo/quickinfo.js
+    defer: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      pygments_lang_class: true
+  - pymdownx.superfences
+```
+
+`pygments_lang_class` adds a `language-python` class to each block. Without
+it, MkDocs code blocks carry no language marker and stay unannotated.
+
+## Build the data
+
+Run `quickinfo build` on the site output after each MkDocs build:
+
+```bash
+mkdocs build
+npx quickinfo build site
+```
+
+The command writes `names.json`, `info.json`, and `quickinfo.js` to
+`site/quickinfo/`. The script finds its data next to itself, so it needs no
+options. Reference links in the data are relative, so the output works
+under any deploy path.
+
+## What gets annotated
+
+Python code blocks resolve against the snippet's imports and bindings, as
+[how names resolve](/resolution) describes. Cross-references such as
+`[Graph][mypkg.Graph]` take their symbol from the link target, and inline
+code resolves by name. Type names in API signatures resolve too. Links in
+the navigation and table of contents stay plain. Tooltips follow Material's
+light and dark palette.
+
+`mkdocs serve` builds without the data. Run
+`npx quickinfo build site --out docs/quickinfo` once to put the files in
+the docs directory, which `mkdocs serve` copies on every rebuild.

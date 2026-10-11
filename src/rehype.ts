@@ -15,19 +15,28 @@ import path from 'path';
 import { readFileSync } from 'fs';
 import { visit } from 'unist-util-visit';
 import type { Node, Parent } from 'unist';
+import { checkCommonOptions } from './lib/options';
+import { buildIndex, resolveHref, resolveProseMention, type SymbolIndex } from './lib/annotate';
 
-export interface RehypeApiHoverOptions {
-  /** Names JSON produced by the consumer's index generator. */
-  dataFile: string;
+/** Options for the rehype pass, passed in the markdown config. */
+interface RehypeQuickinfoOptions {
   /**
-   * Id prefixes that win a short-name collision (e.g. ["max."] on a site
-   * that indexes both MAX symbols and Python stdlib ids).
+   * Path to the names JSON your index generator writes. A relative path
+   * resolves against the process working directory, which is the site
+   * directory under `docusaurus build`.
+   * @default 'static/quickinfo/names.json'
+   */
+  dataFile?: string;
+  /**
+   * Id prefixes that win a short-name collision, e.g. `["max."]` on a site
+   * that indexes both MAX symbols and Python stdlib ids.
+   * @default []
    */
   preferPrefixes?: string[];
   /**
-   * Docs base path under which symbol pages live; used to recognize
-   * absolute doc hrefs like /api/python/generated/<id>.md. Defaults to
-   * "/api".
+   * Docs base path under which symbol pages live. Link hrefs under it,
+   * like `/api/python/generated/<id>.md`, count as links to API pages.
+   * @default '/api'
    */
   apiBasePath?: string;
 }
@@ -39,59 +48,8 @@ interface HastElement extends Node {
 }
 
 interface RehypeContext {
-  ids: string[];
-  idSet: Set<string>;
-  shortMap: Map<string, string[]>;
-  preferPrefixes: string[];
-  apiPathRe: RegExp;
-}
-
-function resolveProse(text: string, ctx: RehypeContext): string | undefined {
-  const name = text.trim().replace(/\(\)$/, '');
-  if (!name || name.length > 80 || /\s/.test(name)) return undefined;
-  if (ctx.idSet.has(name)) return name;
-  if (name.includes('.')) {
-    const suffix = `.${name}`;
-    let hit: string | undefined;
-    let count = 0;
-    for (const id of ctx.ids) {
-      if (id.endsWith(suffix)) {
-        hit = id;
-        count++;
-        if (count > 1) return undefined;
-      }
-    }
-    return hit;
-  }
-  // Bare name: unique short names annotate; on a collision the preferred
-  // prefix wins (so secondary id sources never change an existing
-  // annotation), and first-party collisions stay cold.
-  const hits = ctx.shortMap.get(name);
-  if (!hits) return undefined;
-  if (hits.length === 1) return hits[0];
-  const preferred = hits.filter((h) => ctx.preferPrefixes.some((p) => h.startsWith(p)));
-  return preferred.length === 1 ? preferred[0] : undefined;
-}
-
-/**
- * Extract an API symbol id from a link to a docs API page. The hash
- * fragment is authoritative when it names a symbol. Otherwise recognizes
- * absolute doc paths (<apiBasePath>/...(generated/)?<id>.md), the relative
- * hrefs common in generated markdown (<id>.md), and same-page anchors
- * (#<id>). Guards against non-API links by requiring membership in the id
- * index.
- */
-function idFromHref(href: unknown, ctx: RehypeContext): string | undefined {
-  if (typeof href !== 'string' || !href) return undefined;
-  const hash = (href.split('#')[1] || '').split(/[?#]/)[0];
-  if (hash && ctx.idSet.has(hash)) return hash;
-  if (href.startsWith('#')) return undefined;
-  const pathPart = href.split(/[?#]/)[0].replace(/\/$/, '');
-  const absolute = pathPart.match(ctx.apiPathRe);
-  if (absolute) return ctx.idSet.has(absolute[1]!) ? absolute[1]! : undefined;
-  const base = (pathPart.split('/').pop() || '').match(/^([\w.]+?)(?:\.md)?$/);
-  if (base) return ctx.idSet.has(base[1]!) ? base[1]! : undefined;
-  return undefined;
+  index: SymbolIndex;
+  apiBasePath: string;
 }
 
 /** Inline mentions of identifiers: <code>, or class="code" <em> spans. */
@@ -116,38 +74,50 @@ function plainText(node: HastElement): string {
     .join('');
 }
 
-export default function rehypeApiHover(
-  options: RehypeApiHoverOptions = {} as RehypeApiHoverOptions,
-) {
-  if (!options || typeof options.dataFile !== 'string') {
-    throw new Error('api-hover: rehype plugin requires a dataFile option');
+/**
+ * The rehype pass. Stamps `data-api-id` onto prose mentions of API symbols
+ * at build time: inline code, and links to API pages. A mention annotates
+ * only when it resolves to one symbol; a link to an API page names its
+ * symbol even when the bare name is ambiguous.
+ *
+ * @param options Rehype pass options.
+ * @returns The rehype transformer. It annotates nothing when `dataFile`
+ *   is missing or empty, so a build before the index exists still passes.
+ * @example
+ * ```js
+ * const quickinfoRehype = require('quickinfo/rehype');
+ * const dataFile = path.resolve(__dirname, 'generated/quickinfo-names.json');
+ *
+ * // In the docs plugin or preset options:
+ * rehypePlugins: [[quickinfoRehype, { dataFile }]],
+ * ```
+ */
+function rehypeQuickinfo(options: RehypeQuickinfoOptions = {}): (tree: Node) => void {
+  if (typeof options !== 'object' || options === null) {
+    throw new Error('quickinfo: rehype options must be an object');
   }
+  checkCommonOptions(options as Record<string, unknown>);
+  if (options.dataFile !== undefined && typeof options.dataFile !== 'string') {
+    throw new Error('quickinfo: rehype "dataFile" must be a path');
+  }
+  const dataFile = path.resolve(options.dataFile ?? 'static/quickinfo/names.json');
   let ids: string[] | undefined;
   try {
-    ids = JSON.parse(readFileSync(path.resolve(options.dataFile), 'utf-8')).ids;
+    ids = JSON.parse(readFileSync(dataFile, 'utf-8')).ids;
   } catch {
     // Index not generated yet (e.g. first run before the docs prebuild);
     // annotate nothing; the build must not fail on a missing index.
+    console.warn(
+      `quickinfo: rehype dataFile "${dataFile}" not readable; ` +
+        'prose mentions stay unannotated until the index is generated.',
+    );
     return () => {};
   }
   if (!Array.isArray(ids) || ids.length === 0) return () => {};
 
-  const idSet = new Set(ids);
-  const shortMap = new Map<string, string[]>();
-  for (const id of ids) {
-    const last = id.split('.').pop()!;
-    const bucket = shortMap.get(last);
-    if (bucket) bucket.push(id);
-    else shortMap.set(last, [id]);
-  }
   const ctx: RehypeContext = {
-    ids,
-    idSet,
-    shortMap,
-    preferPrefixes: options.preferPrefixes ?? [],
-    apiPathRe: new RegExp(
-      `^${(options.apiBasePath ?? '/api').replace(/[/\\^$*+?.()|[\]{}]/g, '\\$&')}/(?:generated/)?([\\w.]+?)(?:\\.md)?$`,
-    ),
+    index: buildIndex(ids, {}, options.preferPrefixes ?? []),
+    apiBasePath: options.apiBasePath ?? '/api',
   };
 
   return (tree: Node) => {
@@ -156,7 +126,9 @@ export default function rehypeApiHover(
     // mentions whose bare name is not unique.
     visit(tree, 'element', (node: HastElement, _index, _parent) => {
       if (!node || node.tagName !== 'a') return;
-      const id = idFromHref(node.properties && node.properties.href, ctx);
+      const href = node.properties && node.properties.href;
+      const id =
+        typeof href === 'string' ? resolveHref(href, ctx.index, ctx.apiBasePath) : undefined;
       if (!id) return;
       let annotated = false;
       visit(node, 'element', (child: HastElement, _ci, parent) => {
@@ -193,7 +165,7 @@ export default function rehypeApiHover(
       if (!node.children || node.children.length === 0) return;
       const text = plainText(node).trim();
       if (!text) return;
-      const id = resolveProse(text, ctx);
+      const id = resolveProseMention(text, ctx.index);
       if (id) {
         node.properties = node.properties ?? {};
         node.properties.dataApiId = id;
@@ -201,3 +173,11 @@ export default function rehypeApiHover(
     });
   };
 }
+
+// `export =`: `require('quickinfo/rehype')` returns the plugin function
+// itself, the shape Docusaurus's MDX config checks for.
+namespace rehypeQuickinfo {
+  export type Options = RehypeQuickinfoOptions;
+}
+
+export = rehypeQuickinfo;

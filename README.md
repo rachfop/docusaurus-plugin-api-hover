@@ -1,221 +1,130 @@
-# docusaurus-plugin-api-hover
+# quickinfo
 
-Give your API docs IDE-style hovers. Identifiers that reference a documented
-symbol get a dotted underline, in code blocks and in prose. Hover one and
-every other mention of the symbol on the page lights up. A tooltip shows its
-kind, full name, signature, and a link to its reference page.
+Give your API docs the hovers an editor shows. Identifiers that reference a
+documented symbol get a dotted underline, in code blocks and in prose. Hover
+one and every other mention of the symbol on the page lights up, and a
+tooltip shows its kind, full name, signature, docstring summary, and a link
+to its reference page. Keyboard focus opens the same tooltip, and Escape
+closes it.
+
+quickinfo runs on Docusaurus, Astro and Blume, Sphinx, MkDocs, and any other
+static site.
 
 Resolution is snippet-aware. After `from mypackage import mod`, the name
 `mod.Thing` resolves to `mypackage.mod.Thing`. After `device = Accelerator()`,
 the attribute `device.id` resolves to the `id` attribute of the class,
 following documented base classes when the class itself doesn't define it.
 
-You supply the symbol data: a names JSON generated at build time, and an
-info JSON with signatures and doc summaries that the browser fetches on
-first hover. Everything else ships in the plugin.
+Hovers read two data files: a names JSON listing the symbols, and an info
+JSON with signatures and doc summaries that the browser fetches on first
+hover. On Sphinx and MkDocs, `quickinfo build` writes both from the built
+site.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="media/hover-dark.png">
-  <img src="media/hover-light.png" alt="Hovering the buildApiHoverIndex mention on the plugin's own API reference page shows a tooltip with its kind badge, full name, signature, doc summary, and a reference-page link.">
+  <img src="media/hover-light.png" alt="Hovering the buildIndex mention on the plugin's own API reference page shows a tooltip with its kind badge, full name, signature, doc summary, and a reference-page link.">
 </picture>
 
-The screenshot is captured from this plugin's own docs site, where the
-hovers run through the Astro integration below. CI regenerates it on every
+The screenshot is captured from quickinfo's own docs site, where the hovers
+run through the Astro integration. CI regenerates it on every
 change, so the README always shows the tool as it currently behaves.
 
 ## Install
 
 ```bash
-npm install docusaurus-plugin-api-hover
+npm install quickinfo
 ```
 
-## Quick start
+## Set up your site
 
-Register the plugin for code blocks, and the rehype pass for prose mentions.
-The plugin annotates code blocks as they render; the rehype pass annotates
-prose at build time. The plugin entry also needs the names JSON, which you
-generate in a prebuild step (see [Index files](#index-files)).
+The [docs site](https://rachfop.github.io/quickinfo/) has a full setup page
+for each generator. The short versions:
+
+**Docusaurus.** Put `names.json` and `info.json` in `static/quickinfo/`, then
+register the plugin for code blocks and the rehype pass for prose:
 
 ```js
-const path = require('path');
-const apiHoverRehype = require('docusaurus-plugin-api-hover/rehype');
-
-const dataFile = path.resolve(__dirname, 'generated/api-hover-names.json');
+const quickinfoRehype = require('quickinfo/rehype');
 
 module.exports = {
-  plugins: [
-    [
-      'docusaurus-plugin-api-hover',
-      {
-        dataFile,
-        infoUrl: '/data/api-hover-info.json',
-        preferPrefixes: [],
-        languages: ['python'],
-      },
-    ],
-  ],
+  plugins: [require.resolve('quickinfo/docusaurus')],
   presets: [
     [
-      '@docusaurus/preset-classic',
+      'classic',
       {
-        docs: {
-          rehypePlugins: [[apiHoverRehype, { dataFile }]],
-        },
+        docs: { rehypePlugins: [quickinfoRehype] },
+        pages: { rehypePlugins: [quickinfoRehype] },
       },
     ],
   ],
-  markdown: {
-    rehypePlugins: [[apiHoverRehype, { dataFile }]],
-  },
 };
 ```
 
-Register the rehype pass wherever markdown is rendered: in the docs plugin
-config for docs pages, and in the top-level `markdown` config for MDX pages.
-A mention inside a link to the symbol's page takes its id from the href, so
-links resolve even when the bare name is ambiguous.
-
-Serve the info JSON from `static/` so it's available at `infoUrl`.
-
-If `dataFile` doesn't exist when the build starts, the plugin falls back to an
-empty index. The build succeeds and hovers stay inert until you generate the
-index.
-
-## Astro and Blume sites
-
-Astro sites, Blume included, wire the integration into their config; the
-plugin's own docs site runs it:
+**Astro and Blume.** Put the data files in `public/quickinfo/` and add the
+integration:
 
 ```ts
-import apiHover from 'docusaurus-plugin-api-hover/astro';
+import quickinfo from 'quickinfo/astro';
 
-export default defineConfig({
-  integrations: [
-    apiHover({
-      namesUrl: '/api-hover/names.json',
-      infoUrl: '/api-hover/info.json',
-    }),
-  ],
-});
+export default defineConfig({ integrations: [quickinfo()] });
 ```
 
-`namesUrl` and `infoUrl` are the URLs the browser fetches the same JSON
-files from, served out of the site's static dir. The integration injects
-one script per page that annotates the rendered DOM, so it works with any
-Markdown processor and behaves the same in dev and production. It accepts
-`preferPrefixes` and `languages` with the same meanings as the theme. On a
-site served under a base path, include the base path in both URLs.
+**Sphinx.** Load the script in `conf.py`, then build the data after each
+Sphinx build:
 
-## Options
-
-Set [`dataFile`](#index-files) to the names JSON your prebuild generates. It
-is the one required option; the rest have defaults:
-
-| Option           | Default                     | What it does                                |
-| ---------------- | --------------------------- | ------------------------------------------- |
-| `dataFile`       | none                        | Path to the generated names JSON.           |
-| `infoUrl`        | `/data/api-hover-info.json` | URL the browser fetches the info JSON from. |
-| `preferPrefixes` | `[]`                        | Id prefixes that win short-name collisions. |
-| `languages`      | `['python']`                | Languages to annotate. Built in: `python`.  |
-
-The rehype pass takes `dataFile`, `preferPrefixes`, and `apiBasePath`
-(default `/api`). `apiBasePath` sets which link hrefs count as links to API
-pages.
-
-## How names resolve
-
-An identifier in a Python snippet is resolved against the index using the
-snippet's bindings:
-
-- Exact dotted id: `mypackage.MyClass` resolves when it's in the index.
-- Import aliases: after `from mypackage import mod`, the name `mod.Thing`
-  resolves to `mypackage.mod.Thing`.
-- Unique short names: `MyClass` resolves when exactly one indexed id ends
-  with it.
-- Inferred local types: after `device = Accelerator()`, the attribute
-  `device.id` resolves to the `id` attribute, including attributes inherited
-  from documented base classes.
-
-Names the snippet binds itself stay plain. A local variable called `buffer`
-is your variable, never the `Buffer` class, even when the short name would
-match. A name that could match more than one symbol also stays plain.
-
-`preferPrefixes` breaks those collisions: the id carrying a listed prefix
-wins. Use it when the index mixes your symbols with ids from another source,
-such as the Python standard library.
-
-## Sites that ship their own Root
-
-Docusaurus renders the Root of the last plugin that provides one. If another
-plugin in your `plugins` array ships a `Root` and is registered after this
-one, its Root wins. This plugin's Root, which mounts the hover runtime, never
-runs.
-
-Register this plugin first, then mount the runtime at the layout level:
-
-```js
-import ApiHoverRuntime from 'docusaurus-plugin-api-hover/runtime';
-import 'docusaurus-plugin-api-hover/styles';
-
-// In src/theme/Layout/Provider/index.tsx:
-// composeProviders([..., ApiHoverRuntime])
+```python
+html_js_files = [("quickinfo/quickinfo.js", {"defer": "defer"})]
 ```
 
-The `styles` import supplies the hover styling; the runtime component ships
-without a stylesheet of its own.
-
-## Index files
-
-The names JSON (`dataFile`) lists every annotatable symbol:
-
-```json
-{
-  "ids": ["mypackage.MyClass", "mypackage.MyClass.my_method"],
-  "bases": { "mypackage.MySubClass": ["mypackage.MyClass"] },
-  "version": "0.1.0"
-}
+```bash
+sphinx-build -b html docs docs/_build/html
+npx quickinfo build docs/_build/html
 ```
 
-`ids` are dotted symbol names. `bases` maps each class to its documented base
-classes, which drives inherited-attribute lookup. `version` is appended to the
-info fetch as a cache-busting query, so a new info JSON can't be served
-stale from the browser cache.
+**MkDocs** with mkdocstrings. Load the script and mark code block
+languages in `mkdocs.yml`, then build the data after each MkDocs build:
 
-The info JSON (served at `infoUrl`) holds what the tooltip shows:
-
-```json
-{
-  "mypackage.MyClass": {
-    "kind": "class",
-    "url": "/api/mypackage/MyClass",
-    "sig": "class MyClass(...)",
-    "doc": "First line of the docstring summary."
-  }
-}
+```yaml
+extra_javascript:
+  - path: quickinfo/quickinfo.js
+    defer: true
+markdown_extensions:
+  - pymdownx.highlight:
+      pygments_lang_class: true
 ```
 
-`kind` is a free-form label shown as a badge, such as `class`, `method`, or
-`function`. `sig` and `doc` are optional. An entry without them shows the name
-and the reference link only.
+```bash
+mkdocs build
+npx quickinfo build site
+```
+
+**Any other static site.** Copy the script next to your data files with
+`npx quickinfo assets <dir>`, and add
+`<script defer src="/quickinfo/quickinfo.js"></script>` to your template.
 
 ## Development
 
 ```bash
 npm install
 npm run build
-npm test
+npm test            # engine, plugin, rehype pass, CLI
+npm run test:e2e    # Chromium against real Sphinx and MkDocs output
 ```
 
-The docs site in `website/` runs the plugin through the Astro integration
-and is where the screenshots above come from. Regenerate them with:
+`tests/e2e/sites` holds pages from Sphinx (Furo) and MkDocs (Material with
+mkdocstrings) builds of a toy package. The e2e run builds their data with
+the CLI, serves them, and drives hover, highlight, keyboard focus, and
+Escape in Chromium.
+
+The docs site in `website/` runs quickinfo through the Astro integration.
+Its API reference page and hover data are generated from the JSDoc in
+`src/` by `npm run gen:api`, which runs before every site build. The
+screenshots above come from the site too. Regenerate them with:
 
 ```bash
 cd website
 npm run capture
 ```
-
-The capture builds the site, serves it, and screenshots the hover in both
-themes, so it doubles as an end-to-end check of the integration.
 
 ## License
 

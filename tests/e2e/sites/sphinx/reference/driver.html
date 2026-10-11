@@ -1,0 +1,190 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>driver - toyapi documentation</title>
+</head>
+  <body>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">toyapi  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <span class="sidebar-brand-text">toyapi  documentation</span>
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../guide.html">Guide</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="graph.html">graph</a></li>
+</ul>
+</div>
+</div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/reference/driver.rst.txt" title="View this page">
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="module-toyapi.driver">
+<span id="driver"></span><h1>driver<a class="headerlink" href="#module-toyapi.driver" title="Link to this heading">¶</a></h1>
+<p>Device discovery and management.</p>
+<p>This module exposes the devices that graphs run on.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="toyapi.driver.Accelerator">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">toyapi.driver.</span></span><span class="sig-name descname"><span class="pre">Accelerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#toyapi.driver.Accelerator" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#toyapi.driver.Device" title="toyapi.driver.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">Device</span></code></a></p>
+<p>A GPU or other accelerator device.</p>
+<p>Use <a class="reference internal" href="#toyapi.driver.accelerator_count" title="toyapi.driver.accelerator_count"><code class="xref py py-func docutils literal notranslate"><span class="pre">accelerator_count()</span></code></a> to find how many accelerators exist.</p>
+</dd></dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="toyapi.driver.CPU">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">toyapi.driver.</span></span><span class="sig-name descname"><span class="pre">CPU</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#toyapi.driver.CPU" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#toyapi.driver.Device" title="toyapi.driver.Device"><code class="xref py py-class docutils literal notranslate"><span class="pre">Device</span></code></a></p>
+<p>The host CPU device.</p>
+<p>There is one CPU device per process, and its identifier is zero.</p>
+</dd></dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="toyapi.driver.Device">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">toyapi.driver.</span></span><span class="sig-name descname"><span class="pre">Device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#toyapi.driver.Device" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A compute device that can run graphs.</p>
+<p>Devices are created through subclasses such as <a class="reference internal" href="#toyapi.driver.CPU" title="toyapi.driver.CPU"><code class="xref py py-class docutils literal notranslate"><span class="pre">CPU</span></code></a> and
+<a class="reference internal" href="#toyapi.driver.Accelerator" title="toyapi.driver.Accelerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">Accelerator</span></code></a>. Each device has an integer identifier.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="toyapi.driver.Device.id">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">id</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#toyapi.driver.Device.id" title="Link to this definition">¶</a></dt>
+<dd><p>The integer identifier of this device.</p>
+<p>Identifiers are unique per device type and start at zero.</p>
+</dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="toyapi.driver.Device.synchronize">
+<span class="sig-name descname"><span class="pre">synchronize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#toyapi.driver.Device.synchronize" title="Link to this definition">¶</a></dt>
+<dd><p>Block until all queued work on the device finishes.</p>
+<p>Call this before reading results produced on the device.</p>
+</dd></dl>
+</dd></dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="toyapi.driver.accelerator_count">
+<span class="sig-prename descclassname"><span class="pre">toyapi.driver.</span></span><span class="sig-name descname"><span class="pre">accelerator_count</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#toyapi.driver.accelerator_count" title="Link to this definition">¶</a></dt>
+<dd><p>Return the number of available accelerators.</p>
+<p>Returns zero when the host has no accelerators.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The accelerator count.</p>
+</dd>
+</dl>
+</dd></dl>
+</section>
+        </article>
+      </div>
+      <footer>
+        <div class="related-pages">
+          <a class="next-page" href="graph.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">graph</div>
+              </div>
+            </a>
+          <a class="prev-page" href="../guide.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                <div class="title">Guide</div>
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+          </div>
+          <div class="right-details">
+          </div>
+        </div>
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">driver</a><ul>
+<li><a class="reference internal" href="#toyapi.driver.Accelerator"><code class="docutils literal notranslate"><span class="pre">Accelerator</span></code></a></li>
+<li><a class="reference internal" href="#toyapi.driver.CPU"><code class="docutils literal notranslate"><span class="pre">CPU</span></code></a></li>
+<li><a class="reference internal" href="#toyapi.driver.Device"><code class="docutils literal notranslate"><span class="pre">Device</span></code></a><ul>
+<li><a class="reference internal" href="#toyapi.driver.Device.id"><code class="docutils literal notranslate"><span class="pre">Device.id</span></code></a></li>
+<li><a class="reference internal" href="#toyapi.driver.Device.synchronize"><code class="docutils literal notranslate"><span class="pre">Device.synchronize()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#toyapi.driver.accelerator_count"><code class="docutils literal notranslate"><span class="pre">accelerator_count()</span></code></a></li>
+</ul>
+</li>
+</ul>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+    <script defer="defer" src="../_static/quickinfo/quickinfo.js"></script>
+    </body>
+</html>

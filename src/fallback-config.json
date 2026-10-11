@@ -1,5 +1,5 @@
 {
-  "infoUrl": "/data/api-hover-info.json",
+  "infoUrl": "/quickinfo/info.json",
   "preferPrefixes": [],
   "languages": ["python"]
 }
