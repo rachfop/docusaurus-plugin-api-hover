@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      # Real Sphinx and MkDocs output in Chromium: CLI data build, hover,
+      # highlight, keyboard focus, Escape.
+      - run: npm run test:e2e
+      # The API reference page and the site's hover data are generated from
+      # the JSDoc in src/; fail when a source change didn't regenerate them.
+      - name: Generated API reference is current
+        run: node website/scripts/gen-api.mjs --check

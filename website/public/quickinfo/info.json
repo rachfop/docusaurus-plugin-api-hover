@@ -1,0 +1,436 @@
+{
+  "pluginQuickinfo": {
+    "kind": "plugin",
+    "sig": "pluginQuickinfo(context: LoadContext, options: PluginOptions): Plugin",
+    "doc": "The Docusaurus plugin. Registers the theme components that annotate code blocks, aliases the packed names JSON and the runtime config into the client bundle, and mounts the hover runtime through Root. Prose mentions are annotated by the rehype pass, registered separately.",
+    "url": "../api-reference#pluginquickinfo"
+  },
+  "validateOptions": {
+    "kind": "function",
+    "sig": "validateOptions({ options }: { options: unknown }): PluginOptions",
+    "doc": "Validates the plugin options and fills in defaults. Docusaurus calls it before pluginQuickinfo.",
+    "url": "../api-reference#validateoptions"
+  },
+  "PluginOptions": {
+    "kind": "interface",
+    "doc": "Options for the Docusaurus plugin, passed in docusaurus.config.js.",
+    "url": "../api-reference#pluginoptions"
+  },
+  "PluginOptions.dataFile": {
+    "kind": "option",
+    "sig": "dataFile?: string",
+    "doc": "Path to the names JSON your index generator writes, relative to the site directory. Shape: {ids: string[], bases?: Record<string, string[]>, version?: string}. Default: 'static/quickinfo/names.json'.",
+    "url": "../api-reference#pluginoptions"
+  },
+  "dataFile": {
+    "kind": "option",
+    "sig": "dataFile?: string",
+    "doc": "Path to the names JSON your index generator writes, relative to the site directory. Shape: {ids: string[], bases?: Record<string, string[]>, version?: string}. Default: 'static/quickinfo/names.json'.",
+    "url": "../api-reference#pluginoptions"
+  },
+  "PluginOptions.infoUrl": {
+    "kind": "option",
+    "sig": "infoUrl?: string",
+    "doc": "URL the runtime fetches the info JSON from, with ?v=<version> appended from the names JSON. A root-relative URL gets the site's baseUrl prefixed. Default: '/quickinfo/info.json'.",
+    "url": "../api-reference#pluginoptions"
+  },
+  "infoUrl": {
+    "kind": "option",
+    "sig": "infoUrl?: string",
+    "doc": "URL the runtime fetches the info JSON from, with ?v=<version> appended from the names JSON. A root-relative URL gets the site's baseUrl prefixed. Default: '/quickinfo/info.json'.",
+    "url": "../api-reference#pluginoptions"
+  },
+  "PluginOptions.preferPrefixes": {
+    "kind": "option",
+    "sig": "preferPrefixes?: string[]",
+    "doc": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids. Keeps secondary id sources from changing existing annotations. Default: [].",
+    "url": "../api-reference#pluginoptions"
+  },
+  "preferPrefixes": {
+    "kind": "option",
+    "sig": "preferPrefixes?: string[]",
+    "doc": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids. Keeps secondary id sources from changing existing annotations. Default: [].",
+    "url": "../api-reference#pluginoptions"
+  },
+  "PluginOptions.languages": {
+    "kind": "option",
+    "sig": "languages?: string[]",
+    "doc": "Language modules to enable for code annotation. Built in: \"python\". Default: ['python'].",
+    "url": "../api-reference#pluginoptions"
+  },
+  "languages": {
+    "kind": "option",
+    "sig": "languages?: string[]",
+    "doc": "Language modules to enable for code annotation. Built in: \"python\". Default: ['python'].",
+    "url": "../api-reference#pluginoptions"
+  },
+  "QuickinfoRuntime": {
+    "kind": "component",
+    "sig": "QuickinfoRuntime({ children }: { children?: ReactNode }): ReactNode",
+    "doc": "Starts the hover runtime and loads its styles. The plugin's Root mounts it; mount it yourself (around your layout) only when another plugin's Root replaces this one.",
+    "url": "../api-reference#quickinforuntime"
+  },
+  "rehypeQuickinfo": {
+    "kind": "plugin",
+    "sig": "rehypeQuickinfo(options?: RehypeQuickinfoOptions): (tree: Node) => void",
+    "doc": "The rehype pass. Stamps data-api-id onto prose mentions of API symbols at build time: inline code, and links to API pages. A mention annotates only when it resolves to one symbol; a link to an API page names its symbol even when the bare name is ambiguous.",
+    "url": "../api-reference#rehypequickinfo"
+  },
+  "RehypeQuickinfoOptions": {
+    "kind": "interface",
+    "doc": "Options for the rehype pass, passed in the markdown config.",
+    "url": "../api-reference#rehypequickinfooptions"
+  },
+  "RehypeQuickinfoOptions.dataFile": {
+    "kind": "option",
+    "sig": "dataFile?: string",
+    "doc": "Path to the names JSON your index generator writes. A relative path resolves against the process working directory, which is the site directory under docusaurus build. Default: 'static/quickinfo/names.json'.",
+    "url": "../api-reference#rehypequickinfooptions"
+  },
+  "RehypeQuickinfoOptions.preferPrefixes": {
+    "kind": "option",
+    "sig": "preferPrefixes?: string[]",
+    "doc": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids. Default: [].",
+    "url": "../api-reference#rehypequickinfooptions"
+  },
+  "RehypeQuickinfoOptions.apiBasePath": {
+    "kind": "option",
+    "sig": "apiBasePath?: string",
+    "doc": "Docs base path under which symbol pages live. Link hrefs under it, like /api/python/generated/<id>.md, count as links to API pages. Default: '/api'.",
+    "url": "../api-reference#rehypequickinfooptions"
+  },
+  "apiBasePath": {
+    "kind": "option",
+    "sig": "apiBasePath?: string",
+    "doc": "Docs base path under which symbol pages live. Link hrefs under it, like /api/python/generated/<id>.md, count as links to API pages. Default: '/api'.",
+    "url": "../api-reference#rehypequickinfooptions"
+  },
+  "quickinfo": {
+    "kind": "integration",
+    "sig": "quickinfo(options?: quickinfo.QuickinfoAstroOptions): quickinfo.QuickinfoIntegration",
+    "doc": "The Astro integration, for Blume and plain Astro sites. Injects one script on every page that fetches the names JSON, stamps data-api-id onto prose mentions and Python code blocks in the DOM, and wires the tooltip. Annotation runs in the browser, so it works with any Markdown processor and behaves the same in dev and production.",
+    "url": "../api-reference#quickinfo"
+  },
+  "QuickinfoAstroOptions": {
+    "kind": "interface",
+    "doc": "Options for the Astro integration, passed to quickinfo().",
+    "url": "../api-reference#quickinfoastrooptions"
+  },
+  "QuickinfoAstroOptions.namesUrl": {
+    "kind": "option",
+    "sig": "namesUrl?: string",
+    "doc": "URL the browser fetches the names JSON from. A root-relative URL gets the site's base prefixed. Shape: {ids: string[], bases?: Record<string, string[]>, version?: string}. Default: '/quickinfo/names.json'.",
+    "url": "../api-reference#quickinfoastrooptions"
+  },
+  "namesUrl": {
+    "kind": "option",
+    "sig": "namesUrl?: string",
+    "doc": "URL the browser fetches the names JSON from. A root-relative URL gets the site's base prefixed. Shape: {ids: string[], bases?: Record<string, string[]>, version?: string}. Default: '/quickinfo/names.json'.",
+    "url": "../api-reference#quickinfoastrooptions"
+  },
+  "QuickinfoAstroOptions.infoUrl": {
+    "kind": "option",
+    "sig": "infoUrl?: string",
+    "doc": "URL the runtime fetches the info JSON from, with ?v=<version> appended from the names JSON. A root-relative URL gets the site's base prefixed. Default: '/quickinfo/info.json'.",
+    "url": "../api-reference#quickinfoastrooptions"
+  },
+  "QuickinfoAstroOptions.preferPrefixes": {
+    "kind": "option",
+    "sig": "preferPrefixes?: string[]",
+    "doc": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids. Default: [].",
+    "url": "../api-reference#quickinfoastrooptions"
+  },
+  "QuickinfoAstroOptions.languages": {
+    "kind": "option",
+    "sig": "languages?: string[]",
+    "doc": "Language modules to enable for code annotation. Built in: \"python\". Default: ['python'].",
+    "url": "../api-reference#quickinfoastrooptions"
+  },
+  "ScriptAttributes": {
+    "kind": "attributes",
+    "doc": "Options for the standalone script, set as data attributes on its <script> tag (data-names-url, data-prefer-prefixes, ...). Relative URLs resolve against the script's own URL.",
+    "url": "../api-reference#scriptattributes"
+  },
+  "ScriptAttributes.namesUrl": {
+    "kind": "property",
+    "sig": "namesUrl?: string",
+    "doc": "URL of the names JSON. Default: 'names.json' (next to the script).",
+    "url": "../api-reference#scriptattributes"
+  },
+  "ScriptAttributes.infoUrl": {
+    "kind": "property",
+    "sig": "infoUrl?: string",
+    "doc": "URL of the info JSON. Default: 'info.json' (next to the script).",
+    "url": "../api-reference#scriptattributes"
+  },
+  "ScriptAttributes.preferPrefixes": {
+    "kind": "property",
+    "sig": "preferPrefixes?: string",
+    "doc": "Comma-separated id prefixes that win a short-name collision, e.g. max.,mypkg.. Default: none.",
+    "url": "../api-reference#scriptattributes"
+  },
+  "ScriptAttributes.languages": {
+    "kind": "property",
+    "sig": "languages?: string",
+    "doc": "Comma-separated language modules to enable. Built in: python. Default: 'python'.",
+    "url": "../api-reference#scriptattributes"
+  },
+  "ScriptAttributes.defaultLanguage": {
+    "kind": "property",
+    "sig": "defaultLanguage?: string",
+    "doc": "Language assumed for code blocks with no language marker. Set it to python when the highlighter emits no language class; on MkDocs, enable pymdownx.highlight's pygments_lang_class instead. Default: none.",
+    "url": "../api-reference#scriptattributes"
+  },
+  "initQuickinfo": {
+    "kind": "function",
+    "sig": "initQuickinfo(config: QuickinfoClientConfig): Promise<void>",
+    "doc": "Boot the runtime: load the names JSON, annotate the current document, wire the hover listeners, and keep annotating as the page changes. A second call is a no-op.",
+    "url": "../api-reference#initquickinfo"
+  },
+  "QuickinfoClientConfig": {
+    "kind": "interface",
+    "doc": "The resolved config the browser entry receives.",
+    "url": "../api-reference#quickinfoclientconfig"
+  },
+  "QuickinfoClientConfig.namesUrl": {
+    "kind": "property",
+    "sig": "namesUrl: string",
+    "doc": "URL the browser fetches the names JSON from.",
+    "url": "../api-reference#quickinfoclientconfig"
+  },
+  "QuickinfoClientConfig.infoUrl": {
+    "kind": "property",
+    "sig": "infoUrl: string",
+    "doc": "URL the runtime fetches the info JSON from.",
+    "url": "../api-reference#quickinfoclientconfig"
+  },
+  "QuickinfoClientConfig.preferPrefixes": {
+    "kind": "property",
+    "sig": "preferPrefixes: string[]",
+    "doc": "Id prefixes that win a short-name collision.",
+    "url": "../api-reference#quickinfoclientconfig"
+  },
+  "QuickinfoClientConfig.languages": {
+    "kind": "property",
+    "sig": "languages: string[]",
+    "doc": "Language modules to enable for code annotation.",
+    "url": "../api-reference#quickinfoclientconfig"
+  },
+  "QuickinfoClientConfig.defaultLanguage": {
+    "kind": "property",
+    "sig": "defaultLanguage?: string",
+    "doc": "Language assumed for code blocks that carry no language marker.",
+    "url": "../api-reference#quickinfoclientconfig"
+  },
+  "buildIndex": {
+    "kind": "function",
+    "sig": "buildIndex(ids: string[], basesRecord?: Record<string, string[]>, preferPrefixes?: string[]): SymbolIndex",
+    "doc": "Builds the resolution index from the names JSON's fields.",
+    "url": "../api-reference#buildindex"
+  },
+  "getSnippetContext": {
+    "kind": "function",
+    "sig": "getSnippetContext(code: string, index: SymbolIndex): SnippetContext",
+    "doc": "The binding context (imports, inferred locals, bound names) for a Python snippet, parsed once and memoized no matter how many times the snippet's pieces are resolved. The DOM annotator consumes this on Astro/Blume sites, where there is no prism token stream to carry it.",
+    "url": "../api-reference#getsnippetcontext"
+  },
+  "resolveApiName": {
+    "kind": "function",
+    "sig": "resolveApiName(name: string, aliases: Record<string, string>, index: SymbolIndex): string | undefined",
+    "doc": "Resolve a dotted name against the index using import aliases first, then a unique global short name. Ambiguous names resolve to undefined and stay cold: the mention renders without an id.",
+    "url": "../api-reference#resolveapiname"
+  },
+  "resolveMember": {
+    "kind": "function",
+    "sig": "resolveMember(index: SymbolIndex, classId: string, member: string): string | undefined",
+    "doc": "Find a member's defining id on a class, walking the documented base classes when the class doesn't define the member itself: id accessed on an Accelerator resolves to max.driver.Device.id. Memoized with a pre-set undefined result as the cycle guard.",
+    "url": "../api-reference#resolvemember"
+  },
+  "resolveProseMention": {
+    "kind": "function",
+    "sig": "resolveProseMention(text: string, index: SymbolIndex): string | undefined",
+    "doc": "Resolve a prose mention of a symbol against the index: an exact dotted name, a unique dotted suffix, or a globally-unique bare name (with the preferred prefix breaking ties). Anything else stays cold. Shared by the rehype pass (build time, Docusaurus) and the DOM annotator (browser time, Astro/Blume), which must resolve mentions identically.",
+    "url": "../api-reference#resolveprosemention"
+  },
+  "resolveHref": {
+    "kind": "function",
+    "sig": "resolveHref(href: string, index: SymbolIndex, apiBasePath?: unknown): string | undefined",
+    "doc": "Extract a symbol id from a link to an API page. A fragment naming a symbol wins (graph.html#max.graph.Graph, the shape Sphinx and mkdocstrings emit). Otherwise recognizes absolute doc paths (<apiBasePath>/...(generated/)?<id>(.md)?) and the relative hrefs common in generated markdown (<id>.md). Only ids in the index count, so links to anything else stay cold.",
+    "url": "../api-reference#resolvehref"
+  },
+  "resolveDotted": {
+    "kind": "function",
+    "sig": "resolveDotted(name: string, aliases: Record<string, string>, locals: Record<string, string>, binds: Set<string>, index: SymbolIndex): string | undefined",
+    "doc": "Resolve a dotted occurrence for annotation. Import aliases resolve as in resolveApiName; inferred local variables resolve member access through the inheritance chain, so device.id annotates as max.driver.Device.id once device = driver.Accelerator() is seen. Any other name bound in the snippet stays cold: it's the user's variable, not an API mention, even when it matches a unique short name.",
+    "url": "../api-reference#resolvedotted"
+  },
+  "annotateLines": {
+    "kind": "function",
+    "sig": "annotateLines(line: PrismToken[], code: string, language: string | undefined, index: SymbolIndex, languages?: string[]): PrismToken[]",
+    "doc": "Annotate one prism-rendered line of tokens: each identifier piece gets apiId when it resolves against the index, so CPU in driver.CPU() resolves to max.driver.CPU once from max import driver is seen, and id in device.id resolves to the inherited max.driver.Device.id once device = driver.Accelerator() is. Returns a new array; never mutates the input.",
+    "url": "../api-reference#annotatelines"
+  },
+  "isAnnotatedLanguage": {
+    "kind": "function",
+    "sig": "isAnnotatedLanguage(language: string | undefined, languages?: string[]): boolean",
+    "doc": "Whether code blocks in a prism language get annotated: the language has a built-in module and is enabled in the languages option.",
+    "url": "../api-reference#isannotatedlanguage"
+  },
+  "packNames": {
+    "kind": "function",
+    "sig": "packNames(names: NamesJson): PackedNames",
+    "doc": "Group a names JSON's ids by parent.",
+    "url": "../api-reference#packnames"
+  },
+  "unpackNames": {
+    "kind": "function",
+    "sig": "unpackNames(packed: PackedNames): NamesJson",
+    "doc": "Expand a packed names JSON back to full dotted ids.",
+    "url": "../api-reference#unpacknames"
+  },
+  "SymbolIndex": {
+    "kind": "interface",
+    "doc": "The resolution index built from the names JSON. Every resolver takes one; build it with buildIndex.",
+    "url": "../api-reference#symbolindex"
+  },
+  "SymbolIndex.ids": {
+    "kind": "property",
+    "sig": "ids: string[]",
+    "doc": "All ids, in index order; the prose resolver scans them for suffixes.",
+    "url": "../api-reference#symbolindex"
+  },
+  "SymbolIndex.idSet": {
+    "kind": "property",
+    "sig": "idSet: Set<string>",
+    "doc": "Full dotted ids, e.g. \"max.graph.Graph\".",
+    "url": "../api-reference#symbolindex"
+  },
+  "SymbolIndex.shortMap": {
+    "kind": "property",
+    "sig": "shortMap: Map<string, string[]>",
+    "doc": "Final segment -> ids ending with it.",
+    "url": "../api-reference#symbolindex"
+  },
+  "SymbolIndex.suffixes": {
+    "kind": "property",
+    "sig": "suffixes?: Map<string, string | null>",
+    "doc": "Dotted suffix (two or more segments) -> the one id ending with it, or null when several ids share the suffix. Built on the first prose lookup: code annotation never needs it.",
+    "url": "../api-reference#symbolindex"
+  },
+  "SymbolIndex.members": {
+    "kind": "property",
+    "sig": "members: Map<string, Map<string, string>>",
+    "doc": "Parent id -> (member name -> defining id), for documented parents only.",
+    "url": "../api-reference#symbolindex"
+  },
+  "SymbolIndex.bases": {
+    "kind": "property",
+    "sig": "bases: Map<string, string[]>",
+    "doc": "Class id -> direct documented base class ids.",
+    "url": "../api-reference#symbolindex"
+  },
+  "SymbolIndex.memberMemo": {
+    "kind": "property",
+    "sig": "memberMemo: Map<string, string | undefined>",
+    "doc": "Memo for inherited-member lookups.",
+    "url": "../api-reference#symbolindex"
+  },
+  "SymbolIndex.preferPrefixes": {
+    "kind": "property",
+    "sig": "preferPrefixes: string[]",
+    "doc": "Id prefixes that win a short-name collision (e.g. \"max.\" for a MAX docs site that also indexes Python stdlib ids), so extra id sources can never change an existing annotation.",
+    "url": "../api-reference#symbolindex"
+  },
+  "SnippetContext": {
+    "kind": "interface",
+    "doc": "A Python snippet's binding structure, parsed once per snippet.",
+    "url": "../api-reference#snippetcontext"
+  },
+  "SnippetContext.aliases": {
+    "kind": "property",
+    "sig": "aliases: Record<string, string>",
+    "doc": "Local name to dotted path, from import statements.",
+    "url": "../api-reference#snippetcontext"
+  },
+  "SnippetContext.locals": {
+    "kind": "property",
+    "sig": "locals: Record<string, string>",
+    "doc": "Local name to class id, inferred from constructor-call bindings.",
+    "url": "../api-reference#snippetcontext"
+  },
+  "SnippetContext.binds": {
+    "kind": "property",
+    "sig": "binds: Set<string>",
+    "doc": "Every name the snippet binds: assignments, parameters, as targets.",
+    "url": "../api-reference#snippetcontext"
+  },
+  "PrismToken": {
+    "kind": "interface",
+    "doc": "One prism token on a rendered code line, as theme-classic passes it.",
+    "url": "../api-reference#prismtoken"
+  },
+  "PrismToken.types": {
+    "kind": "property",
+    "sig": "types: string[] | string",
+    "doc": "Prism token types; comment and string tokens are never annotated.",
+    "url": "../api-reference#prismtoken"
+  },
+  "PrismToken.content": {
+    "kind": "property",
+    "sig": "content: string",
+    "doc": "The token's source text.",
+    "url": "../api-reference#prismtoken"
+  },
+  "PrismToken.apiId": {
+    "kind": "property",
+    "sig": "apiId?: string",
+    "doc": "Set by annotateLines when the token resolves to an API symbol.",
+    "url": "../api-reference#prismtoken"
+  },
+  "NamesJson": {
+    "kind": "interface",
+    "doc": "The names JSON an index generator writes.",
+    "url": "../api-reference#namesjson"
+  },
+  "NamesJson.ids": {
+    "kind": "property",
+    "sig": "ids: string[]",
+    "doc": "Every documented symbol id, as full dotted names.",
+    "url": "../api-reference#namesjson"
+  },
+  "NamesJson.bases": {
+    "kind": "property",
+    "sig": "bases?: Record<string, string[]>",
+    "doc": "Class id to its direct documented base class ids.",
+    "url": "../api-reference#namesjson"
+  },
+  "NamesJson.version": {
+    "kind": "property",
+    "sig": "version?: string",
+    "doc": "Busts the info JSON's cache when the index changes.",
+    "url": "../api-reference#namesjson"
+  },
+  "PackedNames": {
+    "kind": "interface",
+    "doc": "The names JSON with ids grouped by parent.",
+    "url": "../api-reference#packednames"
+  },
+  "PackedNames.tree": {
+    "kind": "property",
+    "sig": "tree: Record<string, string[]>",
+    "doc": "Parent id (\"\" for top level) to its members' final segments.",
+    "url": "../api-reference#packednames"
+  },
+  "PackedNames.bases": {
+    "kind": "property",
+    "sig": "bases?: Record<string, string[]>",
+    "doc": "",
+    "url": "../api-reference#packednames"
+  },
+  "PackedNames.version": {
+    "kind": "property",
+    "sig": "version?: string",
+    "doc": "",
+    "url": "../api-reference#packednames"
+  }
+}

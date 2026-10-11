@@ -1,0 +1,143 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>Guide - toyapi documentation</title>
+</head>
+  <body>
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">toyapi  documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  <span class="sidebar-brand-text">toyapi  documentation</span>
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/driver.html">driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/graph.html">graph</a></li>
+</ul>
+</div>
+</div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/guide.rst.txt" title="View this page">
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="guide">
+<h1>Guide<a class="headerlink" href="#guide" title="Link to this heading">¶</a></h1>
+<p>Open a device with <a class="reference internal" href="reference/driver.html#toyapi.driver.Accelerator" title="toyapi.driver.Accelerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">toyapi.driver.Accelerator</span></code></a>, build a <code class="docutils literal notranslate"><span class="pre">Graph</span></code>,
+apply <a class="reference internal" href="reference/graph.html#toyapi.graph.ops.relu" title="toyapi.graph.ops.relu"><code class="xref py py-func docutils literal notranslate"><span class="pre">toyapi.graph.ops.relu()</span></code></a>, and finish with
+<a class="reference internal" href="reference/graph.html#toyapi.graph.Graph.output" title="toyapi.graph.Graph.output"><code class="xref py py-meth docutils literal notranslate"><span class="pre">toyapi.graph.Graph.output()</span></code></a>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">toyapi.graph</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Graph</span><span class="p">,</span>
+    <span class="n">ops</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">toyapi</span><span class="w"> </span><span class="kn">import</span> <span class="n">driver</span>
+<span class="n">device</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">Accelerator</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">device</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">Graph</span><span class="p">(</span><span class="s2">"g"</span><span class="p">)</span> <span class="k">as</span> <span class="n">graph</span><span class="p">:</span>
+    <span class="n">graph</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>A doctest block:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">toyapi.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">Graph</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="s2">"g"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A default-language literal block:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">toyapi.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">Graph</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="n">Graph</span><span class="p">(</span><span class="s2">"plain"</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+        </article>
+      </div>
+      <footer>
+        <div class="related-pages">
+          <a class="next-page" href="reference/driver.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">driver</div>
+              </div>
+            </a>
+          <a class="prev-page" href="index.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                <div class="title">Home</div>
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+          </div>
+          <div class="right-details">
+          </div>
+        </div>
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+    </aside>
+  </div>
+</div>
+    <script defer="defer" src="_static/quickinfo/quickinfo.js"></script>
+    </body>
+</html>

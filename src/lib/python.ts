@@ -9,9 +9,9 @@
  * driver.Accelerator()` makes `device.id` mean `max.driver.Device.id`.
  */
 
-/** Does this prism language tag mean Python? */
+/** Does this language tag mean Python? Doctest (`pycon`) included. */
 export function isPythonLanguage(language: string | undefined): boolean {
-  return !!language && /^(py|python3?)$/i.test(language);
+  return !!language && /^(py3?|python3?|pycon|ipython3?)$/i.test(language);
 }
 
 /**
@@ -80,14 +80,48 @@ export function pythonSkipRegions(code: string): Array<[number, number]> {
   return regions;
 }
 
+/**
+ * The snippet as logical lines: comment and string regions blanked to
+ * spaces (so their contents never parse as bindings), and physical lines
+ * joined while brackets are open or a line ends in a backslash. Lets the
+ * line-based parsers below see `from m import (\n    A,\n    B,\n)` and
+ * a `def` whose parameters span several lines as one statement.
+ */
+function logicalLines(code: string): string[] {
+  // Doctest prompts (`>>> `, `... `) are blanked so the statements behind
+  // them parse like plain source.
+  const chars = code.replace(/^(>>>|\.\.\.)( |$)/gm, (m) => ' '.repeat(m.length)).split('');
+  for (const [start, end] of pythonSkipRegions(code)) {
+    for (let k = start; k < end; k++) if (chars[k] !== '\n') chars[k] = ' ';
+  }
+  const lines: string[] = [];
+  let buffer: string | undefined;
+  let depth = 0;
+  for (const raw of chars.join('').split('\n')) {
+    const continued = /\\\s*$/.test(raw);
+    const line = continued ? raw.replace(/\\\s*$/, '') : raw;
+    for (const ch of line) {
+      if (ch === '(' || ch === '[' || ch === '{') depth++;
+      else if (ch === ')' || ch === ']' || ch === '}') depth = Math.max(0, depth - 1);
+    }
+    buffer = buffer === undefined ? line : `${buffer} ${line.trim()}`;
+    if (depth === 0 && !continued) {
+      lines.push(buffer);
+      buffer = undefined;
+    }
+  }
+  if (buffer !== undefined) lines.push(buffer);
+  return lines;
+}
+
 /** Local-name -> dotted path, built from a snippet's import statements. */
 export function parsePythonImports(code: string): Record<string, string> {
   const aliases: Record<string, string> = {};
-  for (const line of code.split('\n')) {
+  for (const line of logicalLines(code)) {
     const fromMatch = line.match(/^\s*from\s+([A-Za-z_][\w.]*)\s+import\s+(.+?)\s*(?:#.*)?$/);
     if (fromMatch) {
       const mod = fromMatch[1]!;
-      for (const raw of fromMatch[2].split(',')) {
+      for (const raw of fromMatch[2]!.replace(/[()]/g, ' ').split(',')) {
         const item = raw.trim();
         if (!item) continue;
         const asMatch = item.match(/^([A-Za-z_]\w*)\s+as\s+([A-Za-z_]\w*)$/);
@@ -121,15 +155,17 @@ export function parsePythonLocals(
   idSet: Set<string>,
 ): Record<string, string> {
   const locals: Record<string, string> = {};
-  for (const line of code.split('\n')) {
+  for (const line of logicalLines(code)) {
     let varName: string | undefined;
     let call: string | undefined;
-    const assign = line.match(/^\s*([A-Za-z_]\w*)\s*=\s*([A-Za-z_][\w.]*)\s*\(/);
+    const assign = line.match(/^\s*([A-Za-z_]\w*)\s*(?::[^=]+)?=\s*([A-Za-z_][\w.]*)\s*\(/);
     if (assign) {
       varName = assign[1]!;
       call = assign[2]!;
     } else {
-      const withAs = line.match(/^\s*with\s+([A-Za-z_][\w.]*)\s*\(.*\)\s*as\s+([A-Za-z_]\w*)\s*:/);
+      const withAs = line.match(
+        /^\s*(?:async\s+)?with\s+([A-Za-z_][\w.]*)\s*\(.*\)\s*as\s+([A-Za-z_]\w*)\s*:/,
+      );
       if (withAs) {
         call = withAs[1]!;
         varName = withAs[2]!;
@@ -159,21 +195,24 @@ export function parsePythonBinds(code: string): Set<string> {
       binds.add(m[1]!);
     }
   };
-  for (const line of code.split('\n')) {
-    const assign = line.match(/^\s*((?:[A-Za-z_]\w*\s*,\s*)*[A-Za-z_]\w*)\s*=(?!=)/);
+  for (const line of logicalLines(code)) {
+    const assign = line.match(/^\s*((?:[A-Za-z_]\w*\s*,\s*)*[A-Za-z_]\w*)\s*(?::[^=]+)?=(?!=)/);
     if (assign) {
       addNames(assign[1]!);
       continue;
     }
-    const forTarget = line.match(/^\s*for\s+([^:]+?)\s+in\s/);
+    const forTarget = line.match(/^\s*(?:async\s+)?for\s+([^:]+?)\s+in\s/);
     if (forTarget) {
       addNames(forTarget[1]!.replace(/\(|\)|,/g, ' '));
       continue;
     }
-    const params = line.match(/^\s*def\s+\w+\s*\(([^)]*)\)/);
+    const params = line.match(/^\s*(?:async\s+)?def\s+\w+\s*\(([^)]*)\)/);
     if (params) {
       for (const param of params[1]!.split(',')) {
-        const name = param.trim().match(/^([A-Za-z_]\w*)\s*[:=]|^([A-Za-z_]\w*)$/);
+        const name = param
+          .trim()
+          .replace(/^\*{1,2}/, '')
+          .match(/^([A-Za-z_]\w*)\s*[:=]|^([A-Za-z_]\w*)$/);
         if (name) binds.add(name[1] ?? name[2]!);
       }
       continue;

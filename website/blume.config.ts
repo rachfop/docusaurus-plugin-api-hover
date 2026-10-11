@@ -1,23 +1,22 @@
-import apiHover from 'docusaurus-plugin-api-hover/astro';
+import quickinfo from 'quickinfo/astro';
 import { defineConfig } from 'blume';
 
 export default defineConfig({
-  title: 'docusaurus-plugin-api-hover',
+  title: 'quickinfo',
   description: 'IDE-style API hovers for docs sites.',
   github: {
     owner: 'rachfop',
-    repo: 'docusaurus-plugin-api-hover',
+    repo: 'quickinfo',
     dir: 'website',
   },
   lastModified: 'git',
   deployment: {
     site: 'https://rachfop.github.io',
-    base: '/docusaurus-plugin-api-hover',
+    base: '/quickinfo',
   },
   integrations: [
-    apiHover({
-      namesUrl: '/docusaurus-plugin-api-hover/api-hover/names.json',
-      infoUrl: '/docusaurus-plugin-api-hover/api-hover/info.json',
-    }),
+    // Serves public/quickinfo/names.json and info.json; the deploy base
+    // path is prefixed automatically.
+    quickinfo(),
   ],
 });

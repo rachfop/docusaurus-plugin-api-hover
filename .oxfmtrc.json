@@ -1,5 +1,11 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "singleQuote": true,
-  "ignorePatterns": ["node_modules/**", "lib/**"]
+  "ignorePatterns": [
+    "node_modules/**",
+    "lib/**",
+    "tests/e2e/sites/**",
+    "website/docs/09-api-reference.mdx",
+    "website/public/quickinfo/**"
+  ]
 }

@@ -11,8 +11,8 @@
  *
  * Usage:
  *   node scripts/capture-hover.mjs \
- *     --url http://localhost:4173/docusaurus-plugin-api-hover/api-reference \
- *     --symbol buildApiHoverIndex \
+ *     --url http://localhost:4173/quickinfo/api-reference \
+ *     --symbol buildIndex \
  *     --light ../media/hover-light.png,public/hover-light.png \
  *     --dark  ../media/hover-dark.png,public/hover-dark.png
  *
@@ -28,8 +28,8 @@ function arg(name, fallback) {
   return i !== -1 ? process.argv[i + 1] : fallback;
 }
 
-const url = arg('url', 'http://localhost:4173/docusaurus-plugin-api-hover/api-reference');
-const symbol = arg('symbol', 'buildApiHoverIndex');
+const url = arg('url', 'http://localhost:4173/quickinfo/api-reference');
+const symbol = arg('symbol', 'buildIndex');
 const lightOuts = (arg('light', '../media/hover-light.png,public/hover-light.png') || '')
   .split(',')
   .filter(Boolean);
@@ -60,17 +60,17 @@ async function capture(page, theme) {
   await page.hover(target);
   // Settle delay runs inside the runtime; the tooltip then needs the
   // info JSON. Wait for the signature block (the richest state).
-  await page.waitForSelector('.api-hover-tooltip .api-hover-sig', { timeout: 15000 });
+  await page.waitForSelector('.quickinfo-tooltip .quickinfo-sig', { timeout: 15000 });
   // The highlight on every instance of the symbol settles with the show.
   await page.waitForFunction(
-    (sym) => document.querySelector(`[data-api-id="${sym}"]`)?.classList.contains('api-hover-hl'),
+    (sym) => document.querySelector(`[data-api-id="${sym}"]`)?.classList.contains('quickinfo-hl'),
     symbol,
     { timeout: 15000 },
   );
   await page.waitForTimeout(150);
 
   const anchorBox = await page.locator(target).first().boundingBox();
-  const tooltipBox = await page.locator('.api-hover-tooltip').boundingBox();
+  const tooltipBox = await page.locator('.quickinfo-tooltip').boundingBox();
   if (!anchorBox || !tooltipBox) throw new Error('missing anchor or tooltip box');
   const clip = {
     x: Math.max(0, Math.min(anchorBox.x, tooltipBox.x) - PAD_PX),

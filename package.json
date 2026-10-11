@@ -1,25 +1,33 @@
 {
-  "name": "docusaurus-plugin-api-hover",
+  "name": "quickinfo",
   "version": "0.1.0",
-  "description": "Docusaurus plugin for IDE-style API hover: dotted-underline identifiers, page-wide highlight, and signature/docstring tooltips for API symbols in code blocks and prose",
+  "description": "IDE-style API hover tooltips for docs sites: signatures and docstrings on every API symbol in code blocks and prose. Docusaurus, Astro, Sphinx, MkDocs, or any static site.",
   "keywords": [
     "api",
+    "astro",
+    "astro-integration",
     "code",
     "documentation",
     "docusaurus",
     "docusaurus-plugin",
     "hover",
+    "mkdocs",
+    "quickinfo",
+    "sphinx",
     "tooltip"
   ],
-  "homepage": "https://github.com/rachfop/docusaurus-plugin-api-hover#readme",
+  "homepage": "https://github.com/rachfop/quickinfo#readme",
   "bugs": {
-    "url": "https://github.com/rachfop/docusaurus-plugin-api-hover/issues"
+    "url": "https://github.com/rachfop/quickinfo/issues"
   },
   "license": "MIT",
   "author": "Patrick Rachford",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rachfop/docusaurus-plugin-api-hover.git"
+    "url": "git+https://github.com/rachfop/quickinfo.git"
+  },
+  "bin": {
+    "quickinfo": "lib/cli/index.js"
   },
   "files": [
     "lib",
@@ -32,6 +40,18 @@
       "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./docusaurus": {
+      "types": "./lib/docusaurus/index.d.ts",
+      "default": "./lib/docusaurus/index.js"
+    },
+    "./docusaurus/runtime": {
+      "types": "./lib/docusaurus/runtime.d.ts",
+      "default": "./lib/docusaurus/runtime.js"
+    },
+    "./rehype": {
+      "types": "./lib/rehype.d.ts",
+      "default": "./lib/rehype.js"
+    },
     "./astro": {
       "types": "./lib/astro/index.d.ts",
       "default": "./lib/astro/index.js"
@@ -40,30 +60,26 @@
       "types": "./lib/astro/client.d.ts",
       "default": "./lib/astro/client.js"
     },
+    "./browser": "./lib/browser/quickinfo.js",
+    "./styles": "./lib/browser/styles.css",
     "./data": "./lib/fallback-data.json",
     "./config": "./lib/fallback-config.json",
-    "./rehype": {
-      "types": "./lib/rehype.d.ts",
-      "default": "./lib/rehype.js"
-    },
-    "./runtime": {
-      "types": "./lib/theme/ApiHoverRuntime.d.ts",
-      "default": "./lib/theme/ApiHoverRuntime.js"
-    },
-    "./styles": "./lib/theme/styles.css"
+    "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsc && node scripts/copy-assets.js",
+    "build": "tsc && node scripts/copy-assets.js && node scripts/bundle.js",
     "watch": "tsc --watch",
     "lint": "oxlint --deny-warnings",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "test": "node tests/test-annotate.js",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "test:e2e": "node tests/e2e/run.mjs"
   },
   "dependencies": {
     "clsx": "2.1.1",
+    "node-html-parser": "9.0.4",
     "unist-util-visit": "4.1.2"
   },
   "devDependencies": {
@@ -73,8 +89,10 @@
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "@types/unist": "^2.0.10",
+    "esbuild": "0.28.2",
     "oxfmt": "0.71.0",
     "oxlint": "1.86.0",
+    "playwright": "1.64.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "typescript": "5.7.3"
@@ -82,6 +100,14 @@
   "peerDependencies": {
     "@docusaurus/core": "^3.0.0",
     "react": "^18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@docusaurus/core": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=18.0"

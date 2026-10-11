@@ -1,7 +1,8 @@
 /**
- * Core annotation machinery: resolve identifier occurrences in rendered
- * code tokens against an API symbol index and stamp them with `apiId`,
- * which the Token theme component renders as `data-api-id`.
+ * The resolution engine: resolve identifier occurrences in code and prose
+ * against an API symbol index. Pure functions over a `SymbolIndex`; every
+ * adapter shares them (Docusaurus theme components and rehype pass at
+ * build time, the browser annotator on every other site).
  *
  * Mirrors Verso's approach for Lean docs: every known API identifier
  * rendered in a code block gets a stable id, which the hover runtime uses
@@ -10,36 +11,8 @@
  *
  * Language-agnostic: the per-language binding structure (imports, inferred
  * locals, bound names) comes from pluggable language modules (see
- * python.ts). Python is built in; the active set is narrowed by the
- * plugin's `languages` option.
- *
- * The names JSON is aliased by the plugin's webpack config to the
- * consumer's generated index. Resolved lazily because no alias exists in
- * plain-Node contexts (unit harness, SSR edge cases): there the fallback
- * empty index keeps the module loadable and annotates nothing.
+ * python.ts). Python is built in.
  */
-function loadData(): {
-  ids: string[];
-  bases: Record<string, string[]>;
-  version?: string;
-} {
-  try {
-    return require('docusaurus-plugin-api-hover/data') as {
-      ids: string[];
-      bases: Record<string, string[]>;
-      version?: string;
-    };
-  } catch {
-    return { ids: [], bases: {} };
-  }
-}
-
-let dataCache: ReturnType<typeof loadData> | undefined;
-
-function data(): ReturnType<typeof loadData> {
-  dataCache ??= loadData();
-  return dataCache;
-}
 import {
   isPythonLanguage,
   parsePythonBinds,
@@ -47,41 +20,23 @@ import {
   parsePythonLocals,
 } from './python';
 
-/** Fallback config when the aliased module is absent (e.g. unit tests). */
-const FALLBACK_CONFIG = {
-  infoUrl: '/data/api-hover-info.json',
-  preferPrefixes: [] as string[],
-  languages: ['python'],
-};
-
-interface HoverConfig {
-  infoUrl: string;
-  preferPrefixes: string[];
-  languages: string[];
-}
-
-function loadConfig(): HoverConfig {
-  try {
-    return require('docusaurus-plugin-api-hover/config') as HoverConfig;
-  } catch {
-    return FALLBACK_CONFIG;
-  }
-}
-
-let configCache: HoverConfig | undefined;
-
-function activeConfig(): HoverConfig {
-  configCache ??= loadConfig();
-  return configCache;
-}
-
-export interface ApiHoverIndex {
+/**
+ * The resolution index built from the names JSON. Every resolver takes
+ * one; build it with `buildIndex`.
+ */
+export interface SymbolIndex {
   /** All ids, in index order; the prose resolver scans them for suffixes. */
   ids: string[];
   /** Full dotted ids, e.g. "max.graph.Graph". */
   idSet: Set<string>;
   /** Final segment -> ids ending with it. */
   shortMap: Map<string, string[]>;
+  /**
+   * Dotted suffix (two or more segments) -> the one id ending with it, or
+   * `null` when several ids share the suffix. Built on the first prose
+   * lookup: code annotation never needs it.
+   */
+  suffixes?: Map<string, string | null>;
   /** Parent id -> (member name -> defining id), for documented parents only. */
   members: Map<string, Map<string, string>>;
   /** Class id -> direct documented base class ids. */
@@ -96,19 +51,31 @@ export interface ApiHoverIndex {
   preferPrefixes: string[];
 }
 
+/** One prism token on a rendered code line, as theme-classic passes it. */
 export interface PrismToken {
+  /** Prism token types; comment and string tokens are never annotated. */
   types: string[] | string;
+  /** The token's source text. */
   content: string;
   /** Set by annotateLines when the token resolves to an API symbol. */
   apiId?: string;
   [key: string]: unknown;
 }
 
-export function buildApiHoverIndex(
+/**
+ * Builds the resolution index from the names JSON's fields.
+ *
+ * @param ids Every documented symbol id, as full dotted names.
+ * @param basesRecord Class id to its direct documented base class ids,
+ *   for inherited-member lookups.
+ * @param preferPrefixes Id prefixes that win a short-name collision.
+ * @returns The index every resolver takes.
+ */
+export function buildIndex(
   ids: string[],
   basesRecord: Record<string, string[]> = {},
   preferPrefixes: string[] = [],
-): ApiHoverIndex {
+): SymbolIndex {
   const idSet = new Set(ids);
   const shortMap = new Map<string, string[]>();
   const members = new Map<string, Map<string, string>>();
@@ -145,32 +112,20 @@ export function buildApiHoverIndex(
   };
 }
 
-let cachedIndex: ApiHoverIndex | undefined;
-
-export function getApiHoverIndex(): ApiHoverIndex {
-  cachedIndex ??= buildApiHoverIndex(data().ids, data().bases, activeConfig().preferPrefixes);
-  return cachedIndex;
-}
-
-/** Version string from the names JSON; the runtime appends it to its info
- * fetch as a cache-busting query. */
-export function getInfoVersion(): string {
-  return data().version ?? '';
-}
-
-/** Where the runtime fetches the info JSON (signatures/docstrings). */
-export function getInfoUrl(): string {
-  return activeConfig().infoUrl;
-}
-
 /**
  * Find a member's defining id on a class, walking the documented base
  * classes when the class doesn't define the member itself: `id` accessed
  * on an Accelerator resolves to `max.driver.Device.id`. Memoized with a
  * pre-set undefined result as the cycle guard.
+ *
+ * @param index The resolution index.
+ * @param classId The class the member is accessed on.
+ * @param member The member's bare name.
+ * @returns The defining id, or `undefined` when no class in the chain
+ *   documents the member.
  */
 export function resolveMember(
-  index: ApiHoverIndex,
+  index: SymbolIndex,
   classId: string,
   member: string,
 ): string | undefined {
@@ -193,11 +148,17 @@ export function resolveMember(
  * Resolve a dotted name against the index using import aliases first,
  * then a unique global short name. Ambiguous names resolve to undefined
  * and stay cold: the mention renders without an id.
+ *
+ * @param name The dotted name as written, e.g. `driver.CPU`.
+ * @param aliases Local name to dotted path, from the snippet's imports.
+ * @param index The resolution index.
+ * @returns The symbol id, or `undefined` when the name is unknown or
+ *   ambiguous.
  */
 export function resolveApiName(
   name: string,
   aliases: Record<string, string>,
-  index: ApiHoverIndex,
+  index: SymbolIndex,
 ): string | undefined {
   if (!name || name.length > 120 || !/^[A-Za-z_]/.test(name)) return undefined;
   if (index.idSet.has(name)) return name;
@@ -229,35 +190,77 @@ export function resolveApiName(
   return index.idSet.has(candidate) ? candidate : undefined;
 }
 
+function proseSuffixes(index: SymbolIndex): Map<string, string | null> {
+  if (!index.suffixes) {
+    const suffixes = new Map<string, string | null>();
+    for (const id of index.ids) {
+      const segments = id.split('.');
+      for (let k = 1; k < segments.length - 1; k++) {
+        const suffix = segments.slice(k).join('.');
+        suffixes.set(suffix, suffixes.has(suffix) ? null : id);
+      }
+    }
+    index.suffixes = suffixes;
+  }
+  return index.suffixes;
+}
+
 /**
  * Resolve a prose mention of a symbol against the index: an exact dotted
  * name, a unique dotted suffix, or a globally-unique bare name (with the
  * preferred prefix breaking ties). Anything else stays cold. Shared by
  * the rehype pass (build time, Docusaurus) and the DOM annotator (browser
  * time, Astro/Blume), which must resolve mentions identically.
+ *
+ * @param text The mention's text; a trailing `()` is ignored.
+ * @param index The resolution index.
+ * @returns The symbol id, or `undefined` when the mention is unknown or
+ *   ambiguous.
  */
-export function resolveProseMention(text: string, index: ApiHoverIndex): string | undefined {
+export function resolveProseMention(text: string, index: SymbolIndex): string | undefined {
   const name = text.trim().replace(/\(\)$/, '');
   if (!name || name.length > 80 || /\s/.test(name)) return undefined;
   if (index.idSet.has(name)) return name;
-  if (name.includes('.')) {
-    const suffix = `.${name}`;
-    let hit: string | undefined;
-    let count = 0;
-    for (const id of index.ids) {
-      if (id.endsWith(suffix)) {
-        hit = id;
-        count++;
-        if (count > 1) return undefined;
-      }
-    }
-    return hit;
-  }
+  if (name.includes('.')) return proseSuffixes(index).get(name) ?? undefined;
   const hits = index.shortMap.get(name);
   if (!hits) return undefined;
   if (hits.length === 1) return hits[0]!;
   const preferred = hits.filter((h) => index.preferPrefixes.some((p) => h.startsWith(p)));
   return preferred.length === 1 ? preferred[0] : undefined;
+}
+
+/**
+ * Extract a symbol id from a link to an API page. A fragment naming a
+ * symbol wins (`graph.html#max.graph.Graph`, the shape Sphinx and
+ * mkdocstrings emit). Otherwise recognizes absolute doc paths
+ * (`<apiBasePath>/...(generated/)?<id>(.md)?`) and the relative hrefs
+ * common in generated markdown (`<id>.md`). Only ids in the index count,
+ * so links to anything else stay cold.
+ *
+ * @param href The link's `href` as written.
+ * @param index The resolution index.
+ * @param apiBasePath Docs path under which symbol pages live.
+ * @returns The symbol id, or `undefined` for any other link.
+ */
+export function resolveHref(
+  href: string,
+  index: SymbolIndex,
+  apiBasePath = '/api',
+): string | undefined {
+  if (!href) return undefined;
+  const hash = decodeURIComponent((href.split('#')[1] || '').split('?')[0]!);
+  if (hash && index.idSet.has(hash)) return hash;
+  if (href.startsWith('#')) return undefined;
+  const pathPart = href.split(/[?#]/)[0]!.replace(/\/$/, '');
+  const base = apiBasePath.replace(/\/$/, '');
+  if (base && pathPart.startsWith(`${base}/`)) {
+    const match = pathPart
+      .slice(base.length)
+      .match(/^\/(?:.*\/)?(?:generated\/)?([\w.]+?)(?:\.mdx?)?$/);
+    return match && index.idSet.has(match[1]!) ? match[1] : undefined;
+  }
+  const last = (pathPart.split('/').pop() || '').match(/^([\w.]+?)(?:\.mdx?)?$/);
+  return last && index.idSet.has(last[1]!) ? last[1] : undefined;
 }
 
 /**
@@ -267,13 +270,20 @@ export function resolveProseMention(text: string, index: ApiHoverIndex): string 
  * once `device = driver.Accelerator()` is seen. Any other name bound in
  * the snippet stays cold: it's the user's variable, not an API mention,
  * even when it matches a unique short name.
+ *
+ * @param name The dotted occurrence as written, e.g. `device.id`.
+ * @param aliases Local name to dotted path, from the snippet's imports.
+ * @param locals Local name to class id, inferred from constructor calls.
+ * @param binds Every name the snippet binds.
+ * @param index The resolution index.
+ * @returns The symbol id, or `undefined` when the occurrence stays cold.
  */
 export function resolveDotted(
   name: string,
   aliases: Record<string, string>,
   locals: Record<string, string>,
   binds: Set<string>,
-  index: ApiHoverIndex,
+  index: SymbolIndex,
 ): string | undefined {
   const parts = name.split('.');
   const head = parts[0]!;
@@ -306,9 +316,13 @@ interface TokenPiece {
   skip: boolean;
 }
 
+/** A Python snippet's binding structure, parsed once per snippet. */
 export interface SnippetContext {
+  /** Local name to dotted path, from import statements. */
   aliases: Record<string, string>;
+  /** Local name to class id, inferred from constructor-call bindings. */
   locals: Record<string, string>;
+  /** Every name the snippet binds: assignments, parameters, `as` targets. */
   binds: Set<string>;
 }
 
@@ -316,7 +330,7 @@ export interface SnippetContext {
  * matter how many lines its Line components annotate. */
 const snippetMemo = new Map<string, SnippetContext>();
 
-function snippetContext(code: string, index: ApiHoverIndex): SnippetContext {
+function snippetContext(code: string, index: SymbolIndex): SnippetContext {
   let ctx = snippetMemo.get(code);
   if (ctx) return ctx;
   const aliases = parsePythonImports(code);
@@ -335,17 +349,25 @@ function snippetContext(code: string, index: ApiHoverIndex): SnippetContext {
   return ctx;
 }
 
-/** Can this prism language tag be annotated at all? */
-export function isAnnotatedLanguage(language: string | undefined): boolean {
+/**
+ * Whether code blocks in a prism language get annotated: the language
+ * has a built-in module and is enabled in the `languages` option.
+ *
+ * @param language The code block's language tag, e.g. `py`.
+ * @param languages The enabled language modules.
+ */
+export function isAnnotatedLanguage(
+  language: string | undefined,
+  languages: string[] = ['python'],
+): boolean {
   if (!language) return false;
-  const { languages } = activeConfig();
   return isPythonLanguage(language) && languages.includes('python');
 }
 
 function annotateLineTokens(
   line: PrismToken[],
   ctx: SnippetContext,
-  index: ApiHoverIndex,
+  index: SymbolIndex,
 ): PrismToken[] {
   // 1. Split each renderable token into pieces (identifiers isolated).
   const pieces: TokenPiece[] = [];
@@ -427,14 +449,22 @@ function annotateLineTokens(
  * `id` in `device.id` resolves to the inherited `max.driver.Device.id`
  * once `device = driver.Accelerator()` is. Returns a new array; never
  * mutates the input.
+ *
+ * @param line The line's prism tokens.
+ * @param code The whole code block, for import and binding context.
+ * @param language The code block's prism language tag.
+ * @param index The resolution index.
+ * @param languages The enabled language modules.
+ * @returns The line's tokens with `apiId` set on resolved identifiers.
  */
 export function annotateLines(
   line: PrismToken[],
   code: string,
   language: string | undefined,
-  index: ApiHoverIndex = getApiHoverIndex(),
+  index: SymbolIndex,
+  languages: string[] = ['python'],
 ): PrismToken[] {
-  if (!isAnnotatedLanguage(language)) return line;
+  if (!isAnnotatedLanguage(language, languages)) return line;
   const ctx = snippetContext(code, index);
   return annotateLineTokens(line, ctx, index);
 }
@@ -444,7 +474,10 @@ export function annotateLines(
  * Python snippet, parsed once and memoized no matter how many times the
  * snippet's pieces are resolved. The DOM annotator consumes this on
  * Astro/Blume sites, where there is no prism token stream to carry it.
+ *
+ * @param code The whole code block.
+ * @param index The resolution index; constructor calls resolve against it.
  */
-export function getSnippetContext(code: string, index: ApiHoverIndex): SnippetContext {
+export function getSnippetContext(code: string, index: SymbolIndex): SnippetContext {
   return snippetContext(code, index);
 }

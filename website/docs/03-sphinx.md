@@ -1,0 +1,51 @@
+---
+title: Set up Sphinx
+description: Add quickinfo hovers to a Sphinx site with autodoc.
+---
+
+On Sphinx, the symbol data comes from the site itself. Every HTML build
+writes `objects.inv`, the inventory intersphinx reads, which lists each
+documented object with its kind and anchor. The `quickinfo build` command
+reads it, takes signatures, docstring summaries, and base classes from the
+autodoc pages, and writes the data files with the hover script beside them.
+
+## Load the script
+
+Add the script to `conf.py`:
+
+```python
+html_js_files = [("quickinfo/quickinfo.js", {"defer": "defer"})]
+```
+
+Sphinx resolves the path inside `_static/` and adjusts it for every page
+depth.
+
+## Build the data
+
+Run `quickinfo build` on the HTML output after each Sphinx build:
+
+```bash
+sphinx-build -b html docs docs/_build/html
+npx quickinfo build docs/_build/html
+```
+
+The command writes `names.json`, `info.json`, and `quickinfo.js` to
+`_build/html/_static/quickinfo/`. The script finds its data next to itself,
+so it needs no options. Reference links in the data are relative, so the
+output works under any deploy path.
+
+## What gets annotated
+
+Code blocks in Python (`python`, `py`, `pycon`, and Sphinx's default
+highlighting) resolve against the snippet's imports and bindings, as
+[how names resolve](/resolution) describes. Cross-references such as
+`` :class:`mypkg.Graph` `` take their symbol from the link target, and inline
+literals resolve by name. Links in the sidebar and table of contents stay
+plain.
+
+Tooltips follow the theme's light and dark palette on Furo. On other
+themes, set the [`--quickinfo-*` color variables](/script-tag#colors).
+
+`sphinx-autobuild` serves a fresh build without the data. Run
+`quickinfo build` once against its output directory to see hovers while
+writing.
