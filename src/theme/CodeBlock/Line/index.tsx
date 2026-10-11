@@ -3,7 +3,7 @@
  * tokens against the API index before handing the line to the original
  * Line. Annotation resolves identifiers with real snippet context (import
  * aliases, inferred local types, shadowing binds), so every Line must see
- * the whole code block — available from the code block context.
+ * the whole code block, available from the code block context.
  */
 import { useMemo, type ReactNode } from 'react';
 import OriginalLine from '@theme-init/CodeBlock/Line';

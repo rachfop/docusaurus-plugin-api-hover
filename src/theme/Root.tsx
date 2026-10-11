@@ -5,7 +5,7 @@
  * "initial" provider for Root; theme-classic ships no Root of its own).
  *
  * Sites where another plugin registered after this one also ships a Root
- * should mount the runtime at the layout level instead; see the README.
+ * should mount the runtime at the layout level; see the README.
  */
 import { type ReactNode } from 'react';
 import OriginalRoot from '@theme-init/Root';

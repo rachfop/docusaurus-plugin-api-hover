@@ -77,7 +77,7 @@ check('globally unique short name resolves', () => {
 
 check('ambiguous short name stays cold', () => {
   // "value" is documented on two unrelated classes; the short name
-  // alone cannot pick one, so it stays un-annotated.
+  // alone cannot pick one, so it stays cold.
   const ids = ['pkg.Foo.value', 'other.Bar.value'];
   const index = buildApiHoverIndex(ids, {}, []);
   assert.strictEqual(resolveApiName('value', {}, index), undefined);

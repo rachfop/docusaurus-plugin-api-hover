@@ -1,7 +1,7 @@
 /**
  * Rehype plugin that marks inline code mentions of API symbols with
  * `data-api-id`, so the hover runtime can highlight all instances of a
- * symbol on a page and show its signature in a tooltip — including prose
+ * symbol on a page and show its signature in a tooltip, including prose
  * mentions outside code blocks, like Verso does for Lean docs.
  *
  * Resolution is conservative: a mention is only annotated when it maps to
@@ -127,7 +127,7 @@ export default function rehypeApiHover(
     ids = JSON.parse(readFileSync(path.resolve(options.dataFile), 'utf-8')).ids;
   } catch {
     // Index not generated yet (e.g. first run before the docs prebuild);
-    // annotate nothing rather than fail the build.
+    // annotate nothing; the build must not fail on a missing index.
     return () => {};
   }
   if (!Array.isArray(ids) || ids.length === 0) return () => {};
@@ -172,9 +172,10 @@ export default function rehypeApiHover(
           annotated = true;
         }
       });
-      // Signature lines link the bare dotted name (no <code> inside), and
-      // member references label it with the short name. Annotate the link
-      // itself when its text is the symbol id or its final segment.
+      // Signature lines link the bare dotted name (no <code> inside);
+      // member references use the short name as the link text. Annotate
+      // the link itself when its text is the symbol id or its final
+      // segment.
       if (!annotated) {
         const text = plainText(node).trim();
         if (text === id || text === id.split('.').pop()) {

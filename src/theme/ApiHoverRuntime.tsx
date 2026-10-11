@@ -18,9 +18,13 @@ import { createPortal } from 'react-dom';
 import { getInfoUrl, getInfoVersion } from '../lib/annotate';
 
 interface ApiHoverInfoEntry {
+  /** Free-form label shown as a badge, e.g. "class" or "method". */
   kind: string;
+  /** Signature shown in the tooltip's pre block. */
   sig?: string;
+  /** Docstring summary line shown under the signature. */
   doc?: string;
+  /** Link to the symbol's reference page. */
   url: string;
 }
 
@@ -68,7 +72,8 @@ const HIDE_GRACE_MS = 300;
 /**
  * How long a shown tooltip may wait for the info JSON before falling back
  * to a visible "Loading…" placeholder. The fetch starts at hover intent,
- * during the settle delay, so normally the content is ready immediately.
+ * during the settle delay, so the placeholder appears only when the fetch
+ * outruns the grace period.
  */
 const INFO_GRACE_MS = 600;
 
@@ -124,8 +129,7 @@ export default function ApiHoverRuntime({ children }: { children: ReactNode }): 
       } else {
         setInfo(undefined);
         // If the info arrives within the grace period the tooltip stays
-        // unmounted until then, so it appears once, fully formed, instead
-        // of popping in a "Loading…" stub first.
+        // unmounted until then, so it appears once, fully formed.
         fetchInfoJson()
           .then((data) => {
             infoCache = data;
@@ -167,9 +171,9 @@ export default function ApiHoverRuntime({ children }: { children: ReactNode }): 
 
     /**
      * Leaving the token for the page (the 8px gap, or the tooltip's own
-     * edge) schedules the hide instead of firing it immediately, so the
-     * pointer can travel into the tooltip and reach the reference link.
-     * Entering the tooltip (or another token) cancels the timer.
+     * edge) schedules the hide with a grace period, so the pointer can
+     * travel into the tooltip and reach the reference link. Entering the
+     * tooltip (or another token) cancels the timer.
      */
     const scheduleHide = () => {
       cancelHide();
@@ -244,9 +248,9 @@ export default function ApiHoverRuntime({ children }: { children: ReactNode }): 
     };
 
     const onScroll = () => {
-      // Follow the anchor token while the page scrolls instead of hiding.
-      // A pending (not yet shown) hover is left alone: if scrolling moves
-      // the token out from under the pointer, mouseout cancels it.
+      // Follow the anchor token while the page scrolls. A pending (not
+      // yet shown) hover is left alone: if scrolling moves the token out
+      // from under the pointer, mouseout cancels it.
       const el = shownElRef.current;
       if (shownIdRef.current) {
         if (el && el.isConnected) {
@@ -287,7 +291,7 @@ export default function ApiHoverRuntime({ children }: { children: ReactNode }): 
   // two would change the implicit child keys and remount the whole page on
   // every hover state change. The tooltip also stays unmounted until its
   // content is ready (or the info grace period lapses), so it appears
-  // fully formed instead of growing out of a "Loading…" stub.
+  // fully formed.
   const tooltipActive =
     hover !== null && typeof document !== 'undefined' && (info !== undefined || graceElapsed);
 

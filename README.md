@@ -7,12 +7,12 @@ kind, full name, signature, and a link to its reference page.
 
 Resolution is snippet-aware. After `from mypackage import mod`, the name
 `mod.Thing` resolves to `mypackage.mod.Thing`. After `device = Accelerator()`,
-the attribute `device.id` resolves to the `id` member of the class, following
-documented base classes when the class itself doesn't define it.
+the attribute `device.id` resolves to the `id` attribute of the class,
+following documented base classes when the class itself doesn't define it.
 
-You supply the symbol data: a names index generated at build time, and an
-info file with signatures and doc summaries that the browser fetches on first
-hover. Everything else ships in the plugin.
+You supply the symbol data: a names JSON generated at build time, and an
+info JSON with signatures and doc summaries that the browser fetches on
+first hover. Everything else ships in the plugin.
 
 ## Install
 
@@ -23,8 +23,9 @@ npm install docusaurus-plugin-api-hover
 ## Quick start
 
 Register the plugin for code blocks, and the rehype pass for prose mentions.
-The plugin entry also needs the names index, which you generate in a prebuild
-step (see [Index files](#index-files)).
+The plugin annotates code blocks as they render; the rehype pass annotates
+prose at build time. The plugin entry also needs the names JSON, which you
+generate in a prebuild step (see [Index files](#index-files)).
 
 ```js
 const path = require('path');
@@ -65,7 +66,7 @@ config for docs pages, and in the top-level `markdown` config for MDX pages.
 A mention inside a link to the symbol's page takes its id from the href, so
 links resolve even when the bare name is ambiguous.
 
-Serve the info file from `static/` so it's available at `infoUrl`.
+Serve the info JSON from `static/` so it's available at `infoUrl`.
 
 If `dataFile` doesn't exist when the build starts, the plugin falls back to an
 empty index. The build succeeds and hovers stay inert until you generate the
@@ -73,9 +74,12 @@ index.
 
 ## Options
 
+Set [`dataFile`](#index-files) to the names JSON your prebuild generates. It
+is the one required option; the rest have defaults:
+
 | Option           | Default                     | What it does                                |
 | ---------------- | --------------------------- | ------------------------------------------- |
-| `dataFile`       | (required)                  | Path to the generated names JSON.           |
+| `dataFile`       | none                        | Path to the generated names JSON.           |
 | `infoUrl`        | `/data/api-hover-info.json` | URL the browser fetches the info JSON from. |
 | `preferPrefixes` | `[]`                        | Id prefixes that win short-name collisions. |
 | `languages`      | `['python']`                | Languages to annotate. Built in: `python`.  |
@@ -95,8 +99,8 @@ snippet's bindings:
 - Unique short names: `MyClass` resolves when exactly one indexed id ends
   with it.
 - Inferred local types: after `device = Accelerator()`, the attribute
-  `device.id` resolves to the `id` member, including members inherited from
-  documented base classes.
+  `device.id` resolves to the `id` attribute, including attributes inherited
+  from documented base classes.
 
 Names the snippet binds itself stay plain. A local variable called `buffer`
 is your variable, never the `Buffer` class, even when the short name would
@@ -123,8 +127,8 @@ import 'docusaurus-plugin-api-hover/styles';
 // composeProviders([..., ApiHoverRuntime])
 ```
 
-The styles import matters. The runtime component doesn't load its own
-stylesheet.
+The `styles` import supplies the hover styling; the runtime component ships
+without a stylesheet of its own.
 
 ## Index files
 
@@ -139,9 +143,9 @@ The names JSON (`dataFile`) lists every annotatable symbol:
 ```
 
 `ids` are dotted symbol names. `bases` maps each class to its documented base
-classes, which drives inherited-member lookup. `version` is appended to the
-info fetch as a cache-busting query, so a new info file can't be served stale
-from the browser cache.
+classes, which drives inherited-attribute lookup. `version` is appended to the
+info fetch as a cache-busting query, so a new info JSON can't be served
+stale from the browser cache.
 
 The info JSON (served at `infoUrl`) holds what the tooltip shows:
 

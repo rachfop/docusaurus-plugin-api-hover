@@ -62,7 +62,7 @@ export default function pluginApiHover(context: LoadContext, options: PluginOpti
   }
 
   // The runtime config (infoUrl, preferPrefixes, languages) is injected as
-  // an aliased JSON module — the same mechanism as the data file — so the
+  // an aliased JSON module, the same mechanism as the data file, so the
   // plugin stays bundler-agnostic (works under webpack and rspack alike).
   const configDir = path.join(siteDir, '.docusaurus');
   const configPath = path.join(configDir, 'api-hover-config.json');
@@ -122,9 +122,9 @@ export default function pluginApiHover(context: LoadContext, options: PluginOpti
   };
 }
 
-// Hand-rolled validation instead of Joi: the site validates plugin options
-// by mixing this plugin's schema with its own joi instance, and a second
-// joi copy fails with "Cannot mix different versions of joi schemas".
+// Validation is hand-rolled: the site validates plugin options by mixing
+// this plugin's schema with its own joi instance, and a second joi copy
+// fails with "Cannot mix different versions of joi schemas".
 export function validateOptions({ options }: { options: unknown }): PluginOptions {
   if (typeof options !== 'object' || options === null) {
     throw new Error('api-hover: options must be an object');

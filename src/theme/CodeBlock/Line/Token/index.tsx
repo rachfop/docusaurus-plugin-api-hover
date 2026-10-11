@@ -4,8 +4,8 @@
  * of the same symbol on the page and show its signature in a tooltip.
  *
  * Mirrors theme-classic's Token (a pass-through spreading props onto a
- * span); written inline rather than delegating so the annotation
- * attributes land on the same element with no extra render layer.
+ * span); written inline so the annotation attributes land on the same
+ * element with no extra render layer.
  */
 import { type ReactNode } from 'react';
 import clsx from 'clsx';
