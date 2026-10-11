@@ -23,8 +23,15 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const cli = path.join(here, '..', '..', 'lib', 'cli', 'index.js');
 
 const SITES = [
-  { name: 'sphinx', guide: 'guide.html', nested: 'reference/driver.html' },
-  { name: 'mkdocs', guide: 'guide/', nested: 'reference/driver/' },
+  // `out` is where each site's script tag points: Sphinx loads from
+  // _static/, MkDocs from the site root.
+  {
+    name: 'sphinx',
+    guide: 'guide.html',
+    nested: 'reference/driver.html',
+    out: '_static/quickinfo',
+  },
+  { name: 'mkdocs', guide: 'guide/', nested: 'reference/driver/', out: 'quickinfo' },
 ];
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json' };
@@ -55,7 +62,9 @@ for (const site of SITES) {
   console.log(`\n== ${site.name}`);
   const root = mkdtempSync(path.join(tmpdir(), `quickinfo-e2e-${site.name}-`));
   cpSync(path.join(here, 'sites', site.name), root, { recursive: true });
-  execFileSync(process.execPath, [cli, 'build', root], { stdio: 'pipe' });
+  execFileSync(process.execPath, [cli, 'build', root, '--out', path.join(root, site.out)], {
+    stdio: 'pipe',
+  });
   const server = await serve(root);
   const base = `http://localhost:${server.address().port}`;
 
@@ -76,7 +85,16 @@ for (const site of SITES) {
     );
 
   await page.goto(`${base}/${site.guide}`);
-  await page.waitForSelector('[data-api-id]', { state: 'attached', timeout: 10000 });
+  await page
+    .waitForSelector('[data-api-id]', { state: 'attached', timeout: 10000 })
+    .catch((err) => {
+      throw new Error(
+        `${site.name}: no annotations (${problems.join(' || ') || 'no console output'})`,
+        {
+          cause: err,
+        },
+      );
+    });
   const code = await annotations('body', true);
   const prose = await annotations('body', false);
   for (const expected of [
