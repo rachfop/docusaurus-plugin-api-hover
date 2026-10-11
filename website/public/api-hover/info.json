@@ -1,0 +1,140 @@
+{
+  "pluginApiHover": {
+    "kind": "plugin",
+    "sig": "pluginApiHover(context, options): Plugin",
+    "doc": "Docusaurus entry point: registers the theme components and wires the index and runtime config into the client bundle.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#pluginapihover"
+  },
+  "validateOptions": {
+    "kind": "function",
+    "sig": "validateOptions({ options }): PluginOptions",
+    "doc": "Validates the plugin options; the site mixes this into its own joi schema.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#validateoptions"
+  },
+  "rehypeApiHover": {
+    "kind": "plugin",
+    "sig": "rehypeApiHover(options)",
+    "doc": "Rehype pass that stamps data-api-id onto prose mentions of API symbols at build time.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#rehypeapihover"
+  },
+  "apiHover": {
+    "kind": "integration",
+    "sig": "apiHover(options): ApiHoverIntegration",
+    "doc": "Astro integration for Blume and plain Astro sites: annotates in the browser and runs the framework-free hover runtime. The hovers on this site run through it.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#apihover"
+  },
+  "initApiHover": {
+    "kind": "function",
+    "sig": "initApiHover(config): Promise<void>",
+    "doc": "Browser entry injected on every page: loads the names JSON, annotates the DOM, and wires the tooltip listeners.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#initapihover"
+  },
+  "buildApiHoverIndex": {
+    "kind": "function",
+    "sig": "buildApiHoverIndex(ids, bases?, preferPrefixes?): ApiHoverIndex",
+    "doc": "Builds the resolution index from the names JSON: id set, short-name map, member map, and base map.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#buildapihoverindex"
+  },
+  "getSnippetContext": {
+    "kind": "function",
+    "sig": "getSnippetContext(code, index): SnippetContext",
+    "doc": "Parses a Python snippet once into its import aliases, inferred locals, and bound names.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#getsnippetcontext"
+  },
+  "resolveApiName": {
+    "kind": "function",
+    "sig": "resolveApiName(name, aliases, index): string | undefined",
+    "doc": "Resolves a dotted name through import aliases first, then a globally-unique short name.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#resolveapiname"
+  },
+  "resolveMember": {
+    "kind": "function",
+    "sig": "resolveMember(index, classId, member): string | undefined",
+    "doc": "Finds a member's defining id on a class, walking documented base classes.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#resolvemember"
+  },
+  "resolveProseMention": {
+    "kind": "function",
+    "sig": "resolveProseMention(text, index): string | undefined",
+    "doc": "Resolves a prose mention: an exact dotted name, a unique dotted suffix, or a unique bare name.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#resolveprosemention"
+  },
+  "resolveDotted": {
+    "kind": "function",
+    "sig": "resolveDotted(name, aliases, locals, binds, index): string | undefined",
+    "doc": "Resolves one dotted occurrence in a snippet, using inferred local types for member access.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#resolvedotted"
+  },
+  "annotateLines": {
+    "kind": "function",
+    "sig": "annotateLines(line, code, language, index?): PrismToken[]",
+    "doc": "Annotates one prism-rendered line: each identifier piece gets apiId when it resolves against the index.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#annotatelines"
+  },
+  "isAnnotatedLanguage": {
+    "kind": "function",
+    "sig": "isAnnotatedLanguage(language): boolean",
+    "doc": "Whether code blocks in this prism language get annotated.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#isannotatedlanguage"
+  },
+  "ApiHoverIndex": {
+    "kind": "interface",
+    "doc": "The resolution index: ids, id set, short-name map, member and base maps, and prefer prefixes.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#apihoverindex"
+  },
+  "SnippetContext": {
+    "kind": "interface",
+    "doc": "Binding context for one snippet: import aliases, inferred locals, and bound names.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#snippetcontext"
+  },
+  "PrismToken": {
+    "kind": "interface",
+    "doc": "One prism token; annotateLines sets apiId on identifier pieces that resolve.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#prismtoken"
+  },
+  "PluginOptions": {
+    "kind": "interface",
+    "doc": "Options the Docusaurus plugin entry takes: dataFile, infoUrl, preferPrefixes, languages.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#pluginoptions"
+  },
+  "RehypeApiHoverOptions": {
+    "kind": "interface",
+    "doc": "Options the rehype pass takes: dataFile, preferPrefixes, apiBasePath.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#rehypeapihoveroptions"
+  },
+  "ApiHoverAstroOptions": {
+    "kind": "interface",
+    "doc": "Options the Astro integration takes: namesUrl, infoUrl, preferPrefixes, languages.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#apihoverastrooptions"
+  },
+  "dataFile": {
+    "kind": "option",
+    "doc": "Path to the generated names JSON, relative to the site directory. Required.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#options"
+  },
+  "infoUrl": {
+    "kind": "option",
+    "doc": "URL the runtime fetches the info JSON from, with the index version appended as a cache buster.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#options"
+  },
+  "namesUrl": {
+    "kind": "option",
+    "doc": "URL the browser fetches the names JSON from on Astro sites.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#astro-integration"
+  },
+  "preferPrefixes": {
+    "kind": "option",
+    "doc": "Id prefixes that win a short-name collision, so secondary id sources never change an annotation.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#options"
+  },
+  "languages": {
+    "kind": "option",
+    "doc": "Language modules to enable for code annotation. Built in: python.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#options"
+  },
+  "apiBasePath": {
+    "kind": "option",
+    "doc": "Docs base path under which symbol pages live; the rehype pass uses it to recognize API links.",
+    "url": "/docusaurus-plugin-api-hover/api-reference#rehype-pass"
+  }
+}

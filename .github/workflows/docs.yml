@@ -4,12 +4,16 @@ on:
   push:
     branches: [main]
     paths:
+      - 'src/**'
       - 'website/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -28,22 +32,56 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: website/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            website/package-lock.json
       - name: Restore OG card cache
         uses: actions/cache@v4
         with:
           path: website/node_modules/.cache/blume/og
           key: blume-og-${{ runner.os }}-${{ hashFiles('website/package-lock.json') }}
           restore-keys: blume-og-${{ runner.os }}-
-      - name: Install dependencies
-        run: npm install
+      - name: Build the plugin
+        run: |
+          npm ci
+          npm run build
+      - name: Install website dependencies
+        run: npm ci
         working-directory: website
-      - name: Build
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: website
+      - name: Build the site (baseline)
+        run: npm run build
+        working-directory: website
+      # The capture serves the build, regenerates the hover screenshots
+      # in ../media/ and public/, and doubles as an end-to-end check of
+      # the integration (names JSON, annotation, tooltip from info JSON).
+      - name: Capture hover screenshots
+        run: npm run capture -- --no-build
+        working-directory: website
+      - name: Rebuild the site with fresh screenshots
         run: npm run build
         working-directory: website
       - uses: actions/upload-pages-artifact@v3
         with:
           path: website/dist
+      # Keep the committed screenshots in sync with the shipped tool:
+      # commit them back so the README and future builds carry the same
+      # images the deployed site shows. Pushes from GITHUB_TOKEN do not
+      # retrigger workflows, so this cannot loop.
+      - name: Commit updated screenshots
+        run: |
+          git config user.name rachfop
+          git config user.email prachford@icloud.com
+          git add media/hover-light.png media/hover-dark.png \
+            website/public/hover-light.png website/public/hover-dark.png
+          if git diff --cached --quiet; then
+            echo "screenshots unchanged"
+          else
+            git commit -m "Docs: regenerate hover screenshots"
+            git push
+          fi
 
   deploy:
     needs: build

@@ -16,8 +16,12 @@ first hover. Everything else ships in the plugin.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="media/hover-dark.png">
-  <img src="media/hover-light.png" alt="Hovering the CPU symbol in a code block shows a tooltip with its kind badge, full name, signature, doc summary, and a reference-page link.">
+  <img src="media/hover-light.png" alt="Hovering the buildApiHoverIndex mention on the plugin's own API reference page shows a tooltip with its kind badge, full name, signature, doc summary, and a reference-page link.">
 </picture>
+
+The screenshot is captured from this plugin's own docs site, where the
+hovers run through the Astro integration below. CI regenerates it on every
+change, so the README always shows the tool as it currently behaves.
 
 ## Install
 
@@ -76,6 +80,31 @@ Serve the info JSON from `static/` so it's available at `infoUrl`.
 If `dataFile` doesn't exist when the build starts, the plugin falls back to an
 empty index. The build succeeds and hovers stay inert until you generate the
 index.
+
+## Astro and Blume sites
+
+Astro sites, Blume included, wire the integration into their config; the
+plugin's own docs site runs it:
+
+```ts
+import apiHover from 'docusaurus-plugin-api-hover/astro';
+
+export default defineConfig({
+  integrations: [
+    apiHover({
+      namesUrl: '/api-hover/names.json',
+      infoUrl: '/api-hover/info.json',
+    }),
+  ],
+});
+```
+
+`namesUrl` and `infoUrl` are the URLs the browser fetches the same JSON
+files from, served out of the site's static dir. The integration injects
+one script per page that annotates the rendered DOM, so it works with any
+Markdown processor and behaves the same in dev and production. It accepts
+`preferPrefixes` and `languages` with the same meanings as the theme. On a
+site served under a base path, include the base path in both URLs.
 
 ## Options
 
@@ -176,6 +205,17 @@ npm install
 npm run build
 npm test
 ```
+
+The docs site in `website/` runs the plugin through the Astro integration
+and is where the screenshots above come from. Regenerate them with:
+
+```bash
+cd website
+npm run capture
+```
+
+The capture builds the site, serves it, and screenshots the hover in both
+themes, so it doubles as an end-to-end check of the integration.
 
 ## License
 

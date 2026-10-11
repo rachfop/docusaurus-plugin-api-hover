@@ -32,6 +32,16 @@
       "types": "./lib/index.d.ts",
       "default": "./lib/index.js"
     },
+    "./astro": {
+      "types": "./lib/astro/index.d.ts",
+      "default": "./lib/astro/index.js"
+    },
+    "./astro-client": {
+      "types": "./lib/astro/client.d.ts",
+      "default": "./lib/astro/client.js"
+    },
+    "./data": "./lib/fallback-data.json",
+    "./config": "./lib/fallback-config.json",
     "./rehype": {
       "types": "./lib/rehype.d.ts",
       "default": "./lib/rehype.js"

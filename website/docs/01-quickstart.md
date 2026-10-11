@@ -52,3 +52,7 @@ Serve the info JSON from `static/` so it's available at `infoUrl`.
 If `dataFile` doesn't exist when the build starts, the plugin falls back to an
 empty index. The build succeeds and hovers stay inert until you generate the
 index.
+
+On an Astro site, Blume included, use the integration, as the
+[API reference](/api-reference#apihover) shows. The hovers on this site
+work that way.

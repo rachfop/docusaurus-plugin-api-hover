@@ -5,9 +5,14 @@
   "scripts": {
     "dev": "blume dev",
     "build": "blume build",
-    "preview": "blume preview"
+    "preview": "blume preview",
+    "capture": "node scripts/capture.mjs"
   },
   "dependencies": {
-    "blume": "^2.2.2"
+    "blume": "^2.2.2",
+    "docusaurus-plugin-api-hover": "file:.."
+  },
+  "devDependencies": {
+    "playwright": "^1.64.0"
   }
 }

@@ -1,0 +1,19 @@
+/**
+ * Variable bridge for Astro/Blume sites. styles.css reads Docusaurus
+ * `--ifm-*` variables (each with a light static fallback); on a Blume
+ * site this layer points them at Blume's own palette, which flips with
+ * the [data-theme] attribute the toggle sets, so the tooltip follows the
+ * site's light/dark theme instead of staying light. On a plain Astro
+ * site (no `--blume-*` definitions) the static fallbacks stand and the
+ * consumer can override any of these variables in their own CSS.
+ */
+:root {
+  --ifm-color-primary: var(--blume-accent, #02a17e);
+  --ifm-background-surface-color: var(--blume-background, #fff);
+  --ifm-font-color-base: var(--blume-foreground, #222);
+  --ifm-color-emphasis-100: var(--blume-code-background, #f5f5f5);
+  --ifm-color-emphasis-200: var(--blume-muted, #eee);
+  --ifm-color-emphasis-300: var(--blume-border, #bbb);
+  --ifm-color-emphasis-400: var(--blume-muted-foreground, #999);
+  --ifm-link-color: var(--blume-accent, #02a17e);
+}

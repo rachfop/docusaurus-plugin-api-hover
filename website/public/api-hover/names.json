@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "ids": [
+    "pluginApiHover",
+    "validateOptions",
+    "rehypeApiHover",
+    "apiHover",
+    "initApiHover",
+    "buildApiHoverIndex",
+    "getSnippetContext",
+    "resolveApiName",
+    "resolveMember",
+    "resolveProseMention",
+    "resolveDotted",
+    "annotateLines",
+    "isAnnotatedLanguage",
+    "ApiHoverIndex",
+    "SnippetContext",
+    "PrismToken",
+    "PluginOptions",
+    "RehypeApiHoverOptions",
+    "ApiHoverAstroOptions",
+    "dataFile",
+    "infoUrl",
+    "namesUrl",
+    "preferPrefixes",
+    "languages",
+    "apiBasePath"
+  ]
+}
