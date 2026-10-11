@@ -1,0 +1,79 @@
+{
+  "name": "docusaurus-plugin-api-hover",
+  "version": "0.1.0",
+  "description": "Docusaurus plugin for IDE-style API hover: dotted-underline identifiers, page-wide highlight, and signature/docstring tooltips for API symbols in code blocks and prose",
+  "keywords": [
+    "api",
+    "code",
+    "documentation",
+    "docusaurus",
+    "docusaurus-plugin",
+    "hover",
+    "tooltip"
+  ],
+  "homepage": "https://github.com/rachfop/docusaurus-plugin-api-hover#readme",
+  "bugs": {
+    "url": "https://github.com/rachfop/docusaurus-plugin-api-hover/issues"
+  },
+  "license": "MIT",
+  "author": "Patrick Rachford",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rachfop/docusaurus-plugin-api-hover.git"
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./rehype": {
+      "types": "./lib/rehype.d.ts",
+      "default": "./lib/rehype.js"
+    },
+    "./runtime": {
+      "types": "./lib/theme/ApiHoverRuntime.d.ts",
+      "default": "./lib/theme/ApiHoverRuntime.js"
+    },
+    "./styles": "./lib/theme/styles.css"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/copy-assets.js",
+    "watch": "tsc --watch",
+    "lint": "oxlint --deny-warnings",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "test": "node tests/test-annotate.js",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "dependencies": {
+    "clsx": "2.1.1",
+    "unist-util-visit": "4.1.2"
+  },
+  "devDependencies": {
+    "@docusaurus/theme-common": "3.10.2",
+    "@docusaurus/types": "3.10.2",
+    "@types/node": "20.6.0",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@types/unist": "^2.0.10",
+    "oxfmt": "0.71.0",
+    "oxlint": "1.86.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "typescript": "5.7.3"
+  },
+  "peerDependencies": {
+    "@docusaurus/core": "^3.0.0",
+    "react": "^18.0.0"
+  },
+  "engines": {
+    "node": ">=18.0"
+  }
+}
