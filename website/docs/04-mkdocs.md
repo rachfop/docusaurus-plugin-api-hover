@@ -53,4 +53,7 @@ light and dark palette.
 
 `mkdocs serve` builds without the data. Run
 `npx quickinfo build site --out docs/quickinfo` once to put the files in
-the docs directory, which `mkdocs serve` copies on every rebuild.
+the docs directory, which `mkdocs serve` copies to `quickinfo/` on every
+rebuild. The command writes reference links for that served location; pass
+[`--served-at`](/api-reference#cli) when the folder is served somewhere
+else.

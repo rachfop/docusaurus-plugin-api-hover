@@ -18,6 +18,7 @@ import {
   parsePythonBinds,
   parsePythonImports,
   parsePythonLocals,
+  pythonSkipRegions,
 } from './python';
 
 /**
@@ -161,7 +162,7 @@ export function resolveApiName(
   index: SymbolIndex,
 ): string | undefined {
   if (!name || name.length > 120 || !/^[A-Za-z_]/.test(name)) return undefined;
-  if (index.idSet.has(name)) return name;
+  if (name.includes('.') && index.idSet.has(name)) return name;
   const parts = name.split('.');
   const head = parts[0]!;
   const aliasTarget = aliases[head];
@@ -176,18 +177,24 @@ export function resolveApiName(
   // matching both a MAX class and collections.abc.Buffer); the preferred
   // prefix wins so secondary sources never change an existing annotation.
   // First-party collisions stay cold.
-  const shortHits = index.shortMap.get(head);
-  let base: string | undefined;
-  if (shortHits) {
-    if (shortHits.length === 1) base = shortHits[0]!;
-    else {
-      const preferred = shortHits.filter((h) => index.preferPrefixes.some((p) => h.startsWith(p)));
-      if (preferred.length === 1) base = preferred[0];
-    }
-  }
+  const base = pickShortName(head, index);
   if (!base) return undefined;
   const candidate = parts.length === 1 ? base : `${base}.${parts.slice(1).join('.')}`;
   return index.idSet.has(candidate) ? candidate : undefined;
+}
+
+/**
+ * The one id a bare name stands for: the only id ending in it, or else the
+ * only one carrying a preferred prefix. A bare id that is itself in the
+ * index (a stdlib `type` or `bool`) competes like any other, so a
+ * preferred-prefix id still wins over it.
+ */
+function pickShortName(name: string, index: SymbolIndex): string | undefined {
+  const hits = index.shortMap.get(name);
+  if (!hits) return undefined;
+  if (hits.length === 1) return hits[0];
+  const preferred = hits.filter((h) => index.preferPrefixes.some((p) => h.startsWith(p)));
+  return preferred.length === 1 ? preferred[0] : undefined;
 }
 
 function proseSuffixes(index: SymbolIndex): Map<string, string | null> {
@@ -220,45 +227,38 @@ function proseSuffixes(index: SymbolIndex): Map<string, string | null> {
 export function resolveProseMention(text: string, index: SymbolIndex): string | undefined {
   const name = text.trim().replace(/\(\)$/, '');
   if (!name || name.length > 80 || /\s/.test(name)) return undefined;
+  if (!name.includes('.')) return pickShortName(name, index);
   if (index.idSet.has(name)) return name;
-  if (name.includes('.')) return proseSuffixes(index).get(name) ?? undefined;
-  const hits = index.shortMap.get(name);
-  if (!hits) return undefined;
-  if (hits.length === 1) return hits[0]!;
-  const preferred = hits.filter((h) => index.preferPrefixes.some((p) => h.startsWith(p)));
-  return preferred.length === 1 ? preferred[0] : undefined;
+  return proseSuffixes(index).get(name) ?? undefined;
+}
+
+/** decodeURIComponent that returns the input for a malformed escape. */
+export function safeDecode(text: string): string {
+  try {
+    return decodeURIComponent(text);
+  } catch {
+    return text;
+  }
 }
 
 /**
- * Extract a symbol id from a link to an API page. A fragment naming a
- * symbol wins (`graph.html#max.graph.Graph`, the shape Sphinx and
- * mkdocstrings emit). Otherwise recognizes absolute doc paths
- * (`<apiBasePath>/...(generated/)?<id>(.md)?`) and the relative hrefs
- * common in generated markdown (`<id>.md`). Only ids in the index count,
- * so links to anything else stay cold.
+ * Extract a symbol id from a link to an API page on the same site. A
+ * fragment naming a symbol wins (`graph.html#max.graph.Graph`, the shape
+ * Sphinx and mkdocstrings emit); otherwise the page path's last segment
+ * (`/api/python/generated/<id>.md`, `<id>/`) names it. Links with a scheme
+ * or host (`https://docs.python.org/...#int`) point at another site's
+ * symbols and never resolve, and only ids in the index count.
  *
  * @param href The link's `href` as written.
  * @param index The resolution index.
- * @param apiBasePath Docs path under which symbol pages live.
  * @returns The symbol id, or `undefined` for any other link.
  */
-export function resolveHref(
-  href: string,
-  index: SymbolIndex,
-  apiBasePath = '/api',
-): string | undefined {
-  if (!href) return undefined;
-  const hash = decodeURIComponent((href.split('#')[1] || '').split('?')[0]!);
+export function resolveHref(href: string, index: SymbolIndex): string | undefined {
+  if (!href || /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(href)) return undefined;
+  const hash = safeDecode((href.split('#')[1] || '').split('?')[0]!);
   if (hash && index.idSet.has(hash)) return hash;
   if (href.startsWith('#')) return undefined;
   const pathPart = href.split(/[?#]/)[0]!.replace(/\/$/, '');
-  const base = apiBasePath.replace(/\/$/, '');
-  if (base && pathPart.startsWith(`${base}/`)) {
-    const match = pathPart
-      .slice(base.length)
-      .match(/^\/(?:.*\/)?(?:generated\/)?([\w.]+?)(?:\.mdx?)?$/);
-    return match && index.idSet.has(match[1]!) ? match[1] : undefined;
-  }
   const last = (pathPart.split('/').pop() || '').match(/^([\w.]+?)(?:\.mdx?)?$/);
   return last && index.idSet.has(last[1]!) ? last[1] : undefined;
 }
@@ -328,10 +328,15 @@ export interface SnippetContext {
 
 /** Per-snippet parse memo: each code block's bindings are parsed once, no
  * matter how many lines its Line components annotate. */
-const snippetMemo = new Map<string, SnippetContext>();
+const snippetMemo = new WeakMap<SymbolIndex, Map<string, SnippetContext>>();
 
 function snippetContext(code: string, index: SymbolIndex): SnippetContext {
-  let ctx = snippetMemo.get(code);
+  let memo = snippetMemo.get(index);
+  if (!memo) {
+    memo = new Map();
+    snippetMemo.set(index, memo);
+  }
+  let ctx = memo.get(code);
   if (ctx) return ctx;
   const aliases = parsePythonImports(code);
   const locals = parsePythonLocals(
@@ -344,8 +349,8 @@ function snippetContext(code: string, index: SymbolIndex): SnippetContext {
   ctx = { aliases, locals, binds };
   // Bounded: a long docs page can hold many distinct snippets, and the
   // parse is cheap to redo for one that falls out of the memo.
-  if (snippetMemo.size > 64) snippetMemo.clear();
-  snippetMemo.set(code, ctx);
+  if (memo.size > 64) memo.clear();
+  memo.set(code, ctx);
   return ctx;
 }
 
@@ -368,10 +373,22 @@ function annotateLineTokens(
   line: PrismToken[],
   ctx: SnippetContext,
   index: SymbolIndex,
+  untyped = false,
 ): PrismToken[] {
+  // A language Prism doesn't tokenize (pycon, ipython) arrives as plain
+  // tokens with no comment/string types; find those regions by scanning
+  // the line text instead.
+  const regions = untyped
+    ? pythonSkipRegions(line.map((t) => String(t.content ?? '')).join(''))
+    : [];
+  const inRegion = (start: number, end: number) => regions.some(([a, b]) => start < b && a < end);
+  let offset = 0;
+
   // 1. Split each renderable token into pieces (identifiers isolated).
   const pieces: TokenPiece[] = [];
   for (const token of line) {
+    const tokenStart = offset;
+    offset += typeof token.content === 'string' ? token.content.length : 0;
     if (
       typeof token.content !== 'string' ||
       token.content.length === 0 ||
@@ -380,13 +397,10 @@ function annotateLineTokens(
       pieces.push({ content: '', token, skip: true });
       continue;
     }
-    const parts = token.content.split(IDENT_RE);
-    if (parts.length === 1) {
-      pieces.push({ content: token.content, token, skip: false });
-    } else {
-      for (const part of parts) {
-        if (part) pieces.push({ content: part, token, skip: false });
-      }
+    let pos = tokenStart;
+    for (const part of token.content.split(IDENT_RE)) {
+      if (part) pieces.push({ content: part, token, skip: inRegion(pos, pos + part.length) });
+      pos += part.length;
     }
   }
 
@@ -396,7 +410,8 @@ function annotateLineTokens(
   while (i < pieces.length) {
     const piece = pieces[i]!;
     if (piece.skip) {
-      result.push(piece.token);
+      // A whole comment/string token, or a part inside a scanned region.
+      result.push(piece.content ? { ...piece.token, content: piece.content } : piece.token);
       i++;
       continue;
     }
@@ -466,7 +481,7 @@ export function annotateLines(
 ): PrismToken[] {
   if (!isAnnotatedLanguage(language, languages)) return line;
   const ctx = snippetContext(code, index);
-  return annotateLineTokens(line, ctx, index);
+  return annotateLineTokens(line, ctx, index, !/^(py|python)$/i.test(language ?? ''));
 }
 
 /**

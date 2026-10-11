@@ -5,6 +5,7 @@
  * and anchor that document it.
  */
 import { inflateSync } from 'zlib';
+import { safeDecode } from '../lib/annotate';
 
 export interface InventoryEntry {
   /** Full dotted name, e.g. `toyapi.driver.Accelerator`. */
@@ -63,7 +64,7 @@ export function readInventory(buffer: Buffer): InventoryEntry[] {
     const [, name, domain, role, , rawUri] = match as unknown as string[];
     if (domain !== 'py' || !name || !role || seen.has(name)) continue;
     const uri = rawUri!.endsWith('$') ? rawUri!.slice(0, -1) + name : rawUri!;
-    const anchor = decodeURIComponent(uri.split('#')[1] ?? '');
+    const anchor = safeDecode(uri.split('#')[1] ?? '');
     const own = anchor === name || (role === 'module' && anchor === `module-${name}`);
     if (!own) continue;
     seen.add(name);

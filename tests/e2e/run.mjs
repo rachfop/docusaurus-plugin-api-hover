@@ -178,6 +178,70 @@ for (const site of SITES) {
   server.close();
 }
 
+// A synthetic page with the highlighter layouts and focus cases the
+// generator fixtures don't cover: Expressive Code line divs, inline
+// Pygments line numbers, a content callout, links out, a focusable <pre>.
+{
+  console.log('\n== layouts');
+  const root = mkdtempSync(path.join(tmpdir(), 'quickinfo-e2e-layouts-'));
+  cpSync(path.join(here, 'sites', 'layouts'), root, { recursive: true });
+  execFileSync(process.execPath, [cli, 'assets', path.join(root, 'quickinfo')], { stdio: 'pipe' });
+  const server = await serve(root);
+  const base = `http://localhost:${server.address().port}`;
+  const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+  const problems = [];
+  page.on('pageerror', (e) => problems.push(String(e)));
+  await page.goto(`${base}/index.html`);
+  await page.waitForSelector('[data-api-id]', { state: 'attached', timeout: 10000 });
+  const ids = (selector) =>
+    page.$$eval(`${selector} [data-api-id]`, (els) =>
+      els.map((e) => `${e.textContent.trim()}=>${e.getAttribute('data-api-id')}`),
+    );
+  const idOf = (selector) => page.$eval(selector, (e) => e.getAttribute('data-api-id'));
+  const ec = await ids('#ec');
+  check(
+    'Expressive Code lines parse as separate lines',
+    ec.includes('output=>toy.graph.Graph.output'),
+    ec.join(' | '),
+  );
+  const linenos = await ids('#linenos');
+  check(
+    'inline line numbers stay out of the parsed source',
+    linenos.includes('output=>toy.graph.Graph.output'),
+    linenos.join(' | '),
+  );
+  check('inline code in a link to another site stays plain', (await idOf('#out code')) === null);
+  check(
+    'inline code in a link to the symbol resolves',
+    (await idOf('#here code')) === 'toy.graph.Graph',
+  );
+  check(
+    'inline code in a content callout resolves',
+    (await idOf('#callout')) === 'toy.graph.TensorType',
+  );
+  check('navigation chrome stays plain', (await ids('nav')).length === 0);
+
+  await page.focus('pre[tabindex]');
+  await page.waitForTimeout(300);
+  check('focusing a code block opens no tooltip', (await page.$('.quickinfo-tooltip')) === null);
+
+  await page.focus('#out');
+  await page.keyboard.press('Tab');
+  await page.waitForSelector('.quickinfo-tooltip', { timeout: 3000 }).catch(() => {});
+  check('keyboard focus opens the tooltip', (await page.$('.quickinfo-tooltip')) !== null);
+  await page.keyboard.press('Tab');
+  const inTip = await page.evaluate(() => !!document.activeElement?.closest('.quickinfo-tooltip'));
+  check('Tab moves into the tooltip link', inTip);
+  await page.keyboard.press('Tab');
+  await page.waitForTimeout(100);
+  const after = await page.evaluate(() => document.activeElement?.id);
+  check('Tab from the tooltip continues after the mention', after === 'after', after);
+  check('the tooltip closes when focus moves on', (await page.$('.quickinfo-tooltip')) === null);
+  check('no page errors', problems.length === 0, problems.join(' || '));
+  await page.close();
+  server.close();
+}
+
 await browser.close();
 console.log(failures ? `\n${failures} e2e checks failed` : '\nall e2e checks passed');
 process.exit(failures ? 1 : 0);

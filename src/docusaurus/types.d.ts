@@ -18,6 +18,7 @@ declare module 'quickinfo/config' {
     infoUrl: string;
     preferPrefixes: string[];
     languages: string[];
+    exclude: string[];
   };
   export default config;
 }

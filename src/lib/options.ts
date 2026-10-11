@@ -15,12 +15,12 @@ const LANGUAGES = ['python'];
 /** Throws on a malformed shared option: string URLs, string-array lists,
  * and only built-in languages. */
 export function checkCommonOptions(raw: Record<string, unknown>): void {
-  for (const key of ['namesUrl', 'infoUrl', 'apiBasePath']) {
+  for (const key of ['namesUrl', 'infoUrl']) {
     if (raw[key] !== undefined && typeof raw[key] !== 'string') {
       throw new Error(`quickinfo: "${key}" must be a string`);
     }
   }
-  for (const key of ['preferPrefixes', 'languages']) {
+  for (const key of ['preferPrefixes', 'languages', 'exclude']) {
     const value = raw[key];
     if (
       value !== undefined &&

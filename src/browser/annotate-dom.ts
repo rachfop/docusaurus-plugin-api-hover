@@ -41,24 +41,35 @@ const LANG_CLASS_RE = /(?:^|\s)(?:language|lang|highlight)-([\w+-]+)/;
 /**
  * Site chrome whose links and inline code stay plain: tables of contents
  * and sidebars link every symbol on the page, and underlining them all
- * would bury the prose mentions. Covers semantic landmarks plus the TOC
- * classes of Sphinx themes (Furo, Read the Docs, Book) and MkDocs Material.
+ * would bury the prose mentions. Named per theme, since content callouts
+ * use the same <aside> element: Blume, Docusaurus, Starlight, Sphinx
+ * (Furo, Read the Docs, PyData, Book), and MkDocs Material.
  */
 const CHROME_SELECTOR = [
   'nav',
-  'aside',
-  'header',
-  'footer',
   '[role="navigation"]',
-  '.toc',
-  '.toc-tree',
+  '[data-blume-toc]',
+  '[data-blume-nav-drawer]',
+  '.table-of-contents',
+  '.theme-doc-sidebar-container',
+  'starlight-toc',
+  'mobile-starlight-toc',
+  '.sidebar-pane',
+  '.right-sidebar',
+  '.sidebar-drawer',
+  '.toc-drawer',
   '.toctree-wrapper',
-  '.sidebar-tree',
   '.wy-nav-side',
-  '.bd-sidebar',
-  '.md-nav',
+  '.bd-sidebar-primary',
+  '.bd-sidebar-secondary',
   '.md-sidebar',
+  '.md-header',
+  '.md-footer',
 ].join(', ');
+
+/** Line-number gutters inline with the code (Pygments `linenos`, Material
+ * `data-linenos`): never part of the source text. */
+const LINE_NUMBER_SELECTOR = '.linenos, .lineno, [data-linenos]';
 
 interface TextPiece {
   node: Text;
@@ -103,15 +114,15 @@ function annotateLinks(index: SymbolIndex, root: ParentNode): void {
       continue;
     }
     const id = resolveHref(link.getAttribute('href') ?? '', index);
-    if (!id) continue;
     const codes = Array.from(link.querySelectorAll('code'));
-    if (codes.length > 0) {
-      for (const code of codes) {
-        if (!code.hasAttribute('data-api-id')) code.setAttribute('data-api-id', id);
-        resolvedMentions.add(code);
-      }
-      continue;
+    // Inline code inside a link resolves from the link alone: a link
+    // anywhere other than this index's symbol pages (another site, another
+    // language's reference) means the mention isn't this index's symbol.
+    for (const code of codes) {
+      resolvedMentions.add(code);
+      if (id && !code.hasAttribute('data-api-id')) code.setAttribute('data-api-id', id);
     }
+    if (!id || codes.length > 0) continue;
     // A bare link (mkdocstrings autorefs, signature type links): annotate
     // it when its text names the symbol, so "Device" links the class but
     // "see the device docs" stays a plain link.
@@ -134,7 +145,7 @@ function annotateInlineCode(index: SymbolIndex, root: ParentNode): void {
 }
 
 /** The block's language tag, from the first marker found on the code
- * element, the pre, or a wrapper up to three levels out. */
+ * element, the pre, or a wrapper. */
 function blockLanguage(pre: Element, code: Element | null): string | undefined {
   const fromAttr = pre.getAttribute('data-language') ?? code?.getAttribute('data-lang');
   if (fromAttr) return fromAttr;
@@ -142,7 +153,8 @@ function blockLanguage(pre: Element, code: Element | null): string | undefined {
   // class.
   if (pre.closest('.doc-signature')) return 'python';
   let el: Element | null = code ?? pre;
-  for (let depth = 0; el && depth < 5; depth++, el = el.parentElement) {
+  // Material's `linenums` tables put the marker seven levels above <code>.
+  for (let depth = 0; el && depth < 10; depth++, el = el.parentElement) {
     const match = (el.getAttribute('class') ?? '').match(LANG_CLASS_RE);
     // Sphinx's `highlight-default` is its default lexer, Python.
     if (match) return match[1] === 'default' ? 'python' : match[1];
@@ -165,8 +177,34 @@ function annotateCodeBlocks(index: SymbolIndex, options: AnnotateOptions, root: 
   }
 }
 
+/**
+ * The block's source text and the text nodes it came from, each with its
+ * offset into that text. Line-number gutters are left out, and a line
+ * break is supplied between line elements that carry none in their text
+ * (Expressive Code renders each line as a <div> with no newline).
+ */
+function blockText(code: Element): { text: string; nodes: Array<[Text, number]> } {
+  const nodes: Array<[Text, number]> = [];
+  let text = '';
+  let lastLine: Element | null = null;
+  const walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    const parent = node.parentElement;
+    if (parent?.closest(LINE_NUMBER_SELECTOR)) continue;
+    let line: Element | null = parent;
+    while (line && line.parentElement !== code) line = line.parentElement;
+    if (line?.tagName !== 'DIV') line = null;
+    if (line && lastLine && line !== lastLine && !text.endsWith('\n')) text += '\n';
+    if (line) lastLine = line;
+    nodes.push([node, text.length]);
+    text += node.nodeValue ?? '';
+  }
+  return { text, nodes };
+}
+
 function annotatePythonCode(code: Element, index: SymbolIndex): void {
-  const text = code.textContent ?? '';
+  const { text, nodes } = blockText(code);
   if (!text.trim()) return;
   const ctx = getSnippetContext(text, index);
   const skipRegions = pythonSkipRegions(text);
@@ -174,17 +212,13 @@ function annotatePythonCode(code: Element, index: SymbolIndex): void {
     skipRegions.some(([s, e]) => start < e && s < end);
 
   // 1. Split every text node (at any highlighting-span depth) into pieces,
-  //    with offsets into the code element's full text.
+  //    with offsets into the block's source text.
   const pieces: TextPiece[] = [];
   const nodeStart = new Map<Text, number>();
-  const walker = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
-  let offset = 0;
-  while (walker.nextNode()) {
-    const node = walker.currentNode as Text;
-    const value = node.nodeValue ?? '';
+  for (const [node, offset] of nodes) {
     nodeStart.set(node, offset);
     let pos = offset;
-    for (const part of value.split(IDENT_SPLIT_RE)) {
+    for (const part of (node.nodeValue ?? '').split(IDENT_SPLIT_RE)) {
       if (part) {
         pieces.push({
           node,
@@ -196,7 +230,6 @@ function annotatePythonCode(code: Element, index: SymbolIndex): void {
       }
       pos += part.length;
     }
-    offset += value.length;
   }
 
   // 2. Walk dotted chains and resolve each identifier piece, the same

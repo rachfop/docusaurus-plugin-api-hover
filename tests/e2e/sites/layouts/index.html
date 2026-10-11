@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Highlighter layouts</title>
+    <script defer src="quickinfo/quickinfo.js" data-names-url="../names.json" data-info-url="../info.json"></script>
+  </head>
+  <body>
+    <nav class="toc"><a href="#toy.graph.Graph"><code>Graph</code></a></nav>
+    <main>
+      <h1>Layouts quickinfo reads</h1>
+      <p>A link out: <a id="out" href="https://example.com/api/#toy.graph.Graph"><code>Graph</code></a>.</p>
+      <p>A link here: <a id="here" href="#toy.graph.Graph"><code>Graph</code></a> then <a id="after" href="#end">after</a>.</p>
+      <aside class="callout"><p>Inside a callout, <code id="callout">TensorType</code> resolves.</p></aside>
+
+      <!-- Expressive Code (Starlight): one div per line, no newline text. -->
+      <div class="expressive-code">
+        <pre data-language="python" tabindex="0"><code id="ec"><div class="ec-line"><div class="code"><span>from toy.graph import Graph</span></div></div><div class="ec-line"><div class="code"><span># a comment line</span></div></div><div class="ec-line"><div class="code"><span>g = Graph("x")</span></div></div><div class="ec-line"><div class="code"><span>out = g.output</span></div></div></code></pre>
+      </div>
+
+      <!-- Pygments with inline line numbers (Sphinx :linenos: inline). -->
+      <div class="highlight-python"><div class="highlight"><pre id="linenos"><span></span><span class="linenos">1</span>from toy.graph import Graph
+<span class="linenos">2</span>t = Graph("y").output
+</pre></div></div>
+      <p id="end">End.</p>
+    </main>
+  </body>
+</html>
