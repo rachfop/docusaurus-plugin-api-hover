@@ -1,0 +1,13 @@
+{
+  "name": "docusaurus-plugin-api-hover-website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "blume dev",
+    "build": "blume build",
+    "preview": "blume preview"
+  },
+  "dependencies": {
+    "blume": "^2.2.2"
+  }
+}

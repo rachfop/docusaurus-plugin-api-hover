@@ -14,6 +14,11 @@ You supply the symbol data: a names JSON generated at build time, and an
 info JSON with signatures and doc summaries that the browser fetches on
 first hover. Everything else ships in the plugin.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="media/hover-dark.png">
+  <img src="media/hover-light.png" alt="Hovering the CPU symbol in a code block shows a tooltip with its kind badge, full name, signature, doc summary, and a reference-page link.">
+</picture>
+
 ## Install
 
 ```bash
