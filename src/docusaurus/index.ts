@@ -51,16 +51,28 @@ export interface PluginOptions {
    * @default ['python']
    */
   languages?: string[];
+  /**
+   * Route prefixes whose code blocks stay unannotated, under the site's
+   * `baseUrl`: pages for another language or another version of the API
+   * than the index describes, e.g. `['/stable/', '/api/mojo/']`. Pass the
+   * same pages to the rehype pass's `exclude`.
+   * @default []
+   */
+  exclude?: string[];
 }
 
 const DEFAULT_DATA_FILE = 'static/quickinfo/names.json';
 
 function readNames(dataPath: string): NamesJson {
+  if (!existsSync(dataPath)) return { ids: [] };
   try {
     const names = JSON.parse(readFileSync(dataPath, 'utf8')) as NamesJson;
     if (Array.isArray(names.ids)) return names;
-  } catch {
-    // Fall through to the empty index.
+    console.warn(`quickinfo: "${dataPath}" has no "ids" array; hover disabled.`);
+  } catch (err) {
+    console.warn(
+      `quickinfo: "${dataPath}" is not valid JSON (${err instanceof Error ? err.message : err}); hover disabled.`,
+    );
   }
   return { ids: [] };
 }
@@ -122,9 +134,10 @@ export default function pluginQuickinfo(context: LoadContext, options: PluginOpt
   writeFileSync(
     configPath,
     JSON.stringify({
-      infoUrl: withBase(options.infoUrl ?? DEFAULT_INFO_URL, baseUrl),
+      infoUrl: withBase(options.infoUrl || DEFAULT_INFO_URL, baseUrl),
       preferPrefixes: options.preferPrefixes ?? [],
       languages: options.languages ?? ['python'],
+      exclude: (options.exclude ?? []).map((prefix) => withBase(prefix, baseUrl)),
     }),
   );
 
@@ -201,8 +214,9 @@ export function validateOptions({ options }: { options: unknown }): PluginOption
   checkCommonOptions(raw);
   return {
     dataFile: (raw.dataFile as string | undefined) ?? DEFAULT_DATA_FILE,
-    infoUrl: (raw.infoUrl as string | undefined) ?? DEFAULT_INFO_URL,
+    infoUrl: (raw.infoUrl as string | undefined) || DEFAULT_INFO_URL,
     preferPrefixes: (raw.preferPrefixes as string[] | undefined) ?? [],
     languages: (raw.languages as string[] | undefined) ?? ['python'],
+    exclude: (raw.exclude as string[] | undefined) ?? [],
   };
 }

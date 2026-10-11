@@ -5,6 +5,7 @@
  * (`.doc-heading` + `.doc-signature` + `.doc-contents`).
  */
 import { parse, type HTMLElement } from 'node-html-parser';
+import { safeDecode } from '../lib/annotate';
 
 export interface ExtractedSymbol {
   sig?: string;
@@ -24,14 +25,15 @@ function summary(text: string): string | undefined {
   const flat = clean(text);
   if (!flat) return undefined;
   if (flat.length <= MAX_DOC_LENGTH) return flat;
-  return `${flat.slice(0, flat.lastIndexOf(' ', MAX_DOC_LENGTH))}…`;
+  const space = flat.lastIndexOf(' ', MAX_DOC_LENGTH);
+  return `${flat.slice(0, space > 0 ? space : MAX_DOC_LENGTH)}…`;
 }
 
 /** Ids named by the fragments of the links inside an element. */
 function linkedIds(el: HTMLElement | null | undefined, ids: Set<string>): string[] {
   const found: string[] = [];
   for (const a of el?.querySelectorAll('a[href]') ?? []) {
-    const hash = decodeURIComponent((a.getAttribute('href') ?? '').split('#')[1] ?? '');
+    const hash = safeDecode((a.getAttribute('href') ?? '').split('#')[1] ?? '');
     if (ids.has(hash) && !found.includes(hash)) found.push(hash);
   }
   return found;

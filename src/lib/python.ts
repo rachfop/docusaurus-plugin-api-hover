@@ -98,6 +98,14 @@ function logicalLines(code: string): string[] {
   let buffer: string | undefined;
   let depth = 0;
   for (const raw of chars.join('').split('\n')) {
+    // A statement at column 0 can't continue an open bracket in real
+    // code, so an unclosed bracket (a truncated snippet) closes here and the
+    // rest of the block parses on its own.
+    if (buffer !== undefined && depth > 0 && /^[^\s)\]}]/.test(raw)) {
+      lines.push(buffer);
+      buffer = undefined;
+      depth = 0;
+    }
     const continued = /\\\s*$/.test(raw);
     const line = continued ? raw.replace(/\\\s*$/, '') : raw;
     for (const ch of line) {

@@ -100,6 +100,11 @@ Options for the Docusaurus plugin, passed in `docusaurus.config.js`.
     "type": "string[]",
     "default": "['python']",
     "description": "Language modules to enable for code annotation. Built in: \"python\"."
+  },
+  "exclude": {
+    "type": "string[]",
+    "default": "[]",
+    "description": "Route prefixes whose code blocks stay unannotated, under the site's baseUrl: pages for another language or another version of the API than the index describes, e.g. ['/stable/', '/api/mojo/']. Pass the same pages to the rehype pass's exclude."
   }
 }} />
 
@@ -134,7 +139,7 @@ Import from `quickinfo/rehype`.
 The rehype pass. Stamps `data-api-id` onto prose mentions of API symbols at build time: inline code, and links to API pages. A mention annotates only when it resolves to one symbol; a link to an API page names its symbol even when the bare name is ambiguous.
 
 ```ts
-rehypeQuickinfo(options?: RehypeQuickinfoOptions): (tree: Node) => void
+rehypeQuickinfo(options?: RehypeQuickinfoOptions): (tree: Node, file?: PageFile) => void
 ```
 
 #### Parameters
@@ -147,7 +152,7 @@ rehypeQuickinfo(options?: RehypeQuickinfoOptions): (tree: Node) => void
   }
 }} />
 
-Returns `(tree: Node) => void`: The rehype transformer. It annotates nothing when `dataFile` is missing or empty, so a build before the index exists still passes.
+Returns `(tree: Node, file?: PageFile) => void`: The rehype transformer. It annotates nothing when `dataFile` is missing or empty, so a build before the index exists still passes.
 
 ```js
 const quickinfoRehype = require('quickinfo/rehype');
@@ -165,17 +170,17 @@ Options for the rehype pass, passed in the markdown config.
   "dataFile": {
     "type": "string",
     "default": "'static/quickinfo/names.json'",
-    "description": "Path to the names JSON your index generator writes. A relative path resolves against the process working directory, which is the site directory under docusaurus build."
+    "description": "Path to the names JSON your index generator writes. A relative path resolves against the site directory (the nearest folder above each page holding a docusaurus.config.*), the same base the plugin uses."
   },
   "preferPrefixes": {
     "type": "string[]",
     "default": "[]",
     "description": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids."
   },
-  "apiBasePath": {
-    "type": "string",
-    "default": "'/api'",
-    "description": "Docs base path under which symbol pages live. Link hrefs under it, like /api/python/generated/<id>.md, count as links to API pages."
+  "exclude": {
+    "type": "Array<string | RegExp>",
+    "default": "[]",
+    "description": "Pages to leave unannotated: a string matches when the page's source path contains it, a RegExp when it matches the path. Use it for reference pages of another language or another version of the API than the index describes, e.g. ['/api/mojo/', 'versioned_docs/']."
   }
 }} />
 
@@ -281,13 +286,17 @@ Builds hover data from a built Sphinx or MkDocs (mkdocstrings) site: ids, kinds,
 
 ```text
 Usage:
-  quickinfo build <site-dir> [--out <dir>] [--inventory <file>] [--no-assets]
+  quickinfo build <site-dir> [--out <dir>] [--served-at <path>] [--inventory <file>] [--no-assets]
   quickinfo assets <dir>
 
 build   Write names.json, info.json, and quickinfo.js for a built Sphinx or
         MkDocs (mkdocstrings) site, from its objects.inv and API pages.
         --out        Output directory. Default: <site-dir>/_static/quickinfo
                      when _static exists (Sphinx), else <site-dir>/quickinfo.
+        --served-at  Where the output is served, relative to the site root.
+                     Default: --out's path inside <site-dir>, or its folder
+                     name when --out is outside the site (a docs folder the
+                     generator copies to the root, like docs/quickinfo).
         --inventory  The objects.inv to read. Default: <site-dir>/objects.inv.
         --no-assets  Skip copying quickinfo.js.
 assets  Copy quickinfo.js into <dir>.
@@ -496,10 +505,10 @@ Returns `string | undefined`: The symbol id, or `undefined` when the mention is 
 
 ### resolveHref
 
-Extract a symbol id from a link to an API page. A fragment naming a symbol wins (`graph.html#max.graph.Graph`, the shape Sphinx and mkdocstrings emit). Otherwise recognizes absolute doc paths (`<apiBasePath>/...(generated/)?<id>(.md)?`) and the relative hrefs common in generated markdown (`<id>.md`). Only ids in the index count, so links to anything else stay cold.
+Extract a symbol id from a link to an API page on the same site. A fragment naming a symbol wins (`graph.html#max.graph.Graph`, the shape Sphinx and mkdocstrings emit); otherwise the page path's last segment (`/api/python/generated/<id>.md`, `<id>/`) names it. Links with a scheme or host (`https://docs.python.org/...#int`) point at another site's symbols and never resolve, and only ids in the index count.
 
 ```ts
-resolveHref(href: string, index: SymbolIndex, apiBasePath?: unknown): string | undefined
+resolveHref(href: string, index: SymbolIndex): string | undefined
 ```
 
 #### Parameters
@@ -514,11 +523,6 @@ resolveHref(href: string, index: SymbolIndex, apiBasePath?: unknown): string | u
     "type": "SymbolIndex",
     "required": true,
     "description": "The resolution index."
-  },
-  "apiBasePath": {
-    "type": "unknown",
-    "default": "'/api'",
-    "description": "Docs path under which symbol pages live."
   }
 }} />
 

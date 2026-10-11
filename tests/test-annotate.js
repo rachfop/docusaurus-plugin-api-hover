@@ -352,6 +352,84 @@ check('rehype rejects unknown languages', () => {
   assert.throws(() => rehype({ languages: ['rust'] }), /unknown languages/);
 });
 
+// --- review fixes -----------------------------------------------------------
+
+check('malformed escapes in hrefs never throw', () => {
+  const index = makeIndex();
+  assert.strictEqual(resolveHref('#a%zz', index), undefined);
+  assert.strictEqual(resolveHref('menu.html#50%', index), undefined);
+});
+
+check('links to other hosts never resolve, even when the fragment is an id', () => {
+  const index = buildIndex(['int', 'max.graph.Graph'], {}, []);
+  assert.strictEqual(resolveHref('https://mojolang.org/docs/std/simd/#int', index), undefined);
+  assert.strictEqual(resolveHref('//cdn.example/x#max.graph.Graph', index), undefined);
+  assert.strictEqual(resolveHref('/api/x#max.graph.Graph', index), 'max.graph.Graph');
+});
+
+check('preferPrefixes beats a bare id that is itself indexed', () => {
+  const index = buildIndex(
+    ['type', 'max.pipelines.Config.type', 'bool', 'max.dtype.DType.bool'],
+    {},
+    ['max.'],
+  );
+  assert.strictEqual(resolveProseMention('bool', index), 'max.dtype.DType.bool');
+  assert.strictEqual(resolveApiName('type', {}, index), 'max.pipelines.Config.type');
+  // Without a preferred id, the bare one still resolves.
+  assert.strictEqual(resolveProseMention('bool', buildIndex(['bool'], {}, ['max.'])), 'bool');
+});
+
+check('untyped languages skip names inside strings and comments', () => {
+  const code = '>>> from max import driver\n>>> driver.CPU()  # driver.CPU here\n';
+  const line = [{ types: 'plain', content: '>>> driver.CPU()  # CPU and "CPU" here' }];
+  const out = annotateLines(line, code, 'pycon', makeIndex(), ['python']);
+  assert.deepStrictEqual(apiIds(out), ['CPU:max.driver.CPU']);
+});
+
+check('an unclosed bracket ends at the next column-0 statement', () => {
+  const code = 'run(\n    a,\nfrom max.graph import Graph\ng = Graph("x")';
+  assert.deepStrictEqual(parsePythonImports(code), { Graph: 'max.graph.Graph' });
+});
+
+check('rehype leaves inline code in links to other pages unresolved', () => {
+  const dataFile = tempDataFile({ ids: IDS });
+  const transform = rehype({ dataFile });
+  const tree = el('root', [
+    el('p', [
+      el('a', [el('code', [text('AlgebraicDim')])], { href: '/api/mojo/layout/#algebraicdim' }),
+    ]),
+  ]);
+  transform(tree);
+  assert.deepStrictEqual(collectApiIds(tree), []);
+});
+
+check('rehype skips excluded pages', () => {
+  const dataFile = tempDataFile({ ids: IDS });
+  const transform = rehype({ dataFile, exclude: ['/api/mojo/'] });
+  const mojo = el('root', [el('p', [el('code', [text('AlgebraicDim')])])]);
+  transform(mojo, { path: '/site/docs/api/mojo/layout.md' });
+  assert.deepStrictEqual(collectApiIds(mojo), []);
+  const python = el('root', [el('p', [el('code', [text('AlgebraicDim')])])]);
+  transform(python, { path: '/site/docs/develop/graph.md' });
+  assert.deepStrictEqual(collectApiIds(python), ['AlgebraicDim=>max.nn.kernels.AlgebraicDim']);
+});
+
+check('rehype resolves a relative dataFile against the site directory', () => {
+  const siteDir = tempSite();
+  fs.writeFileSync(path.join(siteDir, 'docusaurus.config.js'), 'module.exports = {};');
+  fs.mkdirSync(path.join(siteDir, 'static', 'quickinfo'), { recursive: true });
+  fs.writeFileSync(
+    path.join(siteDir, 'static', 'quickinfo', 'names.json'),
+    JSON.stringify({ ids: IDS }),
+  );
+  fs.mkdirSync(path.join(siteDir, 'docs'));
+  const transform = rehype();
+  const tree = el('root', [el('p', [el('code', [text('AlgebraicDim')])])]);
+  // process.cwd() is the repo, not the site.
+  transform(tree, { path: path.join(siteDir, 'docs', 'page.md') });
+  assert.deepStrictEqual(collectApiIds(tree), ['AlgebraicDim=>max.nn.kernels.AlgebraicDim']);
+});
+
 // --- docusaurus plugin ------------------------------------------------------
 
 const docusaurus = require('../lib/docusaurus');
@@ -366,6 +444,7 @@ check('validateOptions fills every default', () => {
     infoUrl: '/quickinfo/info.json',
     preferPrefixes: [],
     languages: ['python'],
+    exclude: [],
   });
 });
 
@@ -466,6 +545,7 @@ const zlib = require('zlib');
 const { execFileSync } = require('child_process');
 const { readInventory } = require('../lib/cli/inventory');
 const { extractPage } = require('../lib/cli/extract');
+const CLI = path.join(__dirname, '..', 'lib', 'cli', 'index.js');
 
 function inventory(lines) {
   const header =
@@ -577,6 +657,47 @@ check('quickinfo build writes data and script beside each other', () => {
   );
   assert.strictEqual(info['toy.driver.Accelerator'].kind, 'class');
   assert.ok(fs.existsSync(path.join(out, 'quickinfo.js')));
+});
+
+check('quickinfo build links from where --out is served', () => {
+  const site = tempSite();
+  fs.writeFileSync(path.join(site, 'objects.inv'), inventory(INVENTORY_LINES));
+  const docsOut = path.join(tempSite(), 'docs', 'quickinfo');
+  execFileSync(process.execPath, [CLI, 'build', site, '--out', docsOut, '--no-assets'], {
+    stdio: 'pipe',
+  });
+  const info = JSON.parse(fs.readFileSync(path.join(docsOut, 'info.json'), 'utf8'));
+  // Served at <root>/quickinfo/, one level below the root.
+  assert.strictEqual(info['toy.driver.Device'].url, '../driver.html#toy.driver.Device');
+  execFileSync(
+    process.execPath,
+    [CLI, 'build', site, '--out', docsOut, '--served-at', 'assets/qi', '--no-assets'],
+    { stdio: 'pipe' },
+  );
+  const info2 = JSON.parse(fs.readFileSync(path.join(docsOut, 'info.json'), 'utf8'));
+  assert.strictEqual(info2['toy.driver.Device'].url, '../../driver.html#toy.driver.Device');
+});
+
+check('quickinfo build version changes when a docstring does', () => {
+  const site = tempSite();
+  fs.mkdirSync(path.join(site, '_static'));
+  fs.writeFileSync(path.join(site, 'objects.inv'), inventory(INVENTORY_LINES));
+  const version = () => {
+    execFileSync(process.execPath, [CLI, 'build', site, '--no-assets'], { stdio: 'pipe' });
+    return JSON.parse(
+      fs.readFileSync(path.join(site, '_static', 'quickinfo', 'names.json'), 'utf8'),
+    ).version;
+  };
+  fs.writeFileSync(path.join(site, 'driver.html'), SPHINX_PAGE);
+  const before = version();
+  fs.writeFileSync(path.join(site, 'driver.html'), SPHINX_PAGE.replace('A GPU', 'An accelerator'));
+  assert.notStrictEqual(version(), before);
+});
+
+check('quickinfo build survives malformed escapes in links', () => {
+  const out = new Map();
+  extractPage(SPHINX_PAGE.replace('href="#toy.driver.Device"', 'href="#bad%zz"'), TOY_IDS, out);
+  assert.deepStrictEqual(out.get('toy.driver.Accelerator').bases, []);
 });
 
 check('quickinfo build fails clearly without an inventory', () => {

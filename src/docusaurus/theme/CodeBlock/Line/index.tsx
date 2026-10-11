@@ -8,7 +8,8 @@
 import { useMemo, type ReactNode } from 'react';
 import OriginalLine from '@theme-init/CodeBlock/Line';
 import { useCodeBlockContext } from '@docusaurus/theme-common/internal';
-import { annotateLines, type PrismToken } from '../../../../lib/annotate';
+import { useLocation } from '@docusaurus/router';
+import { annotateLines, isAnnotatedLanguage, type PrismToken } from '../../../../lib/annotate';
 import { getSiteIndex, siteConfig } from '../../../site-data';
 
 interface LineProps {
@@ -22,16 +23,19 @@ interface LineProps {
 
 export default function CodeBlockLine(props: LineProps): ReactNode {
   const { metadata } = useCodeBlockContext();
+  const { pathname } = useLocation();
+  const { languages, exclude } = siteConfig();
+  // The route is the same during server rendering and hydration, so an
+  // excluded page renders identically on both sides.
+  const annotate =
+    isAnnotatedLanguage(metadata.language, languages) &&
+    !exclude.some((prefix) => pathname.startsWith(prefix));
   const annotatedLine = useMemo(
     () =>
-      annotateLines(
-        props.line,
-        metadata.code,
-        metadata.language,
-        getSiteIndex(),
-        siteConfig().languages,
-      ),
-    [props.line, metadata.code, metadata.language],
+      annotate
+        ? annotateLines(props.line, metadata.code, metadata.language, getSiteIndex(), languages)
+        : props.line,
+    [annotate, props.line, metadata.code, metadata.language, languages],
   );
   return <OriginalLine {...props} line={annotatedLine} />;
 }

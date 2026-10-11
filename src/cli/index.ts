@@ -2,7 +2,7 @@
 /**
  * The quickinfo CLI.
  *
- *   quickinfo build <site-dir> [--out <dir>] [--inventory <file>] [--no-assets]
+ *   quickinfo build <site-dir> [--out <dir>] [--served-at <path>] [--inventory <file>] [--no-assets]
  *   quickinfo assets <dir>
  *
  * `build` turns a built Sphinx or MkDocs (mkdocstrings) site into hover
@@ -21,13 +21,17 @@ import { extractPage, type ExtractedSymbol } from './extract';
 import { kindForRole, readInventory } from './inventory';
 
 const USAGE = `Usage:
-  quickinfo build <site-dir> [--out <dir>] [--inventory <file>] [--no-assets]
+  quickinfo build <site-dir> [--out <dir>] [--served-at <path>] [--inventory <file>] [--no-assets]
   quickinfo assets <dir>
 
 build   Write names.json, info.json, and quickinfo.js for a built Sphinx or
         MkDocs (mkdocstrings) site, from its objects.inv and API pages.
         --out        Output directory. Default: <site-dir>/_static/quickinfo
                      when _static exists (Sphinx), else <site-dir>/quickinfo.
+        --served-at  Where the output is served, relative to the site root.
+                     Default: --out's path inside <site-dir>, or its folder
+                     name when --out is outside the site (a docs folder the
+                     generator copies to the root, like docs/quickinfo).
         --inventory  The objects.inv to read. Default: <site-dir>/objects.inv.
         --no-assets  Skip copying quickinfo.js.
 assets  Copy quickinfo.js into <dir>.`;
@@ -39,15 +43,15 @@ function fail(message: string): never {
   process.exit(1);
 }
 
-function* htmlFiles(dir: string): Generator<string> {
+/** Top-level output folders with no API pages: Sphinx's highlighted
+ * sources, copied sources, and static files; MkDocs' assets and search. */
+const SKIPPED_ROOT_DIRS = ['_modules', '_sources', '_static', 'assets', 'search'];
+
+function* htmlFiles(dir: string, root = true): Generator<string> {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    // Sphinx's highlighted-source pages and copied sources carry no API
-    // signatures worth reading.
     if (entry.isDirectory()) {
-      if (!['_modules', '_sources', '_static', 'assets', 'search'].includes(entry.name)) {
-        yield* htmlFiles(full);
-      }
+      if (!(root && SKIPPED_ROOT_DIRS.includes(entry.name))) yield* htmlFiles(full, false);
     } else if (entry.name.endsWith('.html')) {
       yield full;
     }
@@ -64,11 +68,13 @@ function build(args: string[]): void {
   let siteDir: string | undefined;
   let outDir: string | undefined;
   let inventoryPath: string | undefined;
+  let servedAt: string | undefined;
   let assets = true;
   for (let k = 0; k < args.length; k++) {
     const arg = args[k]!;
     if (arg === '--out') outDir = args[++k];
     else if (arg === '--inventory') inventoryPath = args[++k];
+    else if (arg === '--served-at') servedAt = args[++k];
     else if (arg === '--no-assets') assets = false;
     else if (arg.startsWith('-')) fail(`unknown option ${arg}`);
     else if (!siteDir) siteDir = arg;
@@ -90,18 +96,26 @@ function build(args: string[]): void {
     );
   }
 
-  const inventoryBytes = readFileSync(inventoryPath);
-  const entries = readInventory(inventoryBytes);
+  const entries = readInventory(readFileSync(inventoryPath));
   if (entries.length === 0) fail(`${inventoryPath} lists no Python objects`);
   const ids = new Set(entries.map((e) => e.name));
 
   const extracted = new Map<string, ExtractedSymbol>();
   for (const file of htmlFiles(siteDir)) extractPage(readFileSync(file, 'utf8'), ids, extracted);
 
-  // Reference links are stored relative to info.json; the runtime
-  // resolves them against the info JSON's own URL, so they work at any
-  // page depth and under any deploy path.
-  const toRoot = path.relative(outDir, siteDir).split(path.sep).join('/');
+  // Reference links are stored relative to where info.json is served; the
+  // runtime resolves them against the info JSON's own URL, so they work at
+  // any page depth and under any deploy path.
+  const inside = path.relative(siteDir, outDir);
+  const served = (
+    servedAt ??
+    (inside && !inside.startsWith('..') && !path.isAbsolute(inside)
+      ? inside
+      : path.basename(outDir))
+  )
+    .split(/[\\/]+/)
+    .filter((segment) => segment && segment !== '.');
+  const toRoot = served.map(() => '..').join('/');
   const info: Record<string, { kind: string; sig?: string; doc?: string; url: string }> = {};
   const bases: Record<string, string[]> = {};
   for (const entry of entries) {
@@ -114,11 +128,18 @@ function build(args: string[]): void {
     };
     if (found?.bases.length) bases[entry.name] = found.bases;
   }
-  const version = createHash('sha256').update(inventoryBytes).digest('hex').slice(0, 12);
+  // The version busts cached info JSON, so it hashes what the tooltips
+  // show: a docstring edit changes it even when objects.inv doesn't.
+  const infoJson = JSON.stringify(info);
+  const version = createHash('sha256')
+    .update(infoJson)
+    .update(JSON.stringify(bases))
+    .digest('hex')
+    .slice(0, 12);
 
   mkdirSync(outDir, { recursive: true });
   writeFileSync(path.join(outDir, 'names.json'), JSON.stringify({ version, ids: [...ids], bases }));
-  writeFileSync(path.join(outDir, 'info.json'), JSON.stringify(info));
+  writeFileSync(path.join(outDir, 'info.json'), infoJson);
   if (assets) copyScript(outDir);
   const shown = path.relative(process.cwd(), outDir);
   console.log(

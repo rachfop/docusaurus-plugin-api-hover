@@ -14,6 +14,7 @@ interface SiteConfig {
   infoUrl: string;
   preferPrefixes: string[];
   languages: string[];
+  exclude: string[];
 }
 
 let namesCache: NamesJson | undefined;

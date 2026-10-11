@@ -18,3 +18,8 @@ declare module '@theme-init/CodeBlock/Line/Token' {
   import { type ReactNode } from 'react';
   export default function CodeBlockLineToken(props: Record<string, unknown>): ReactNode;
 }
+
+/** Docusaurus's react-router re-export; resolved by the site's bundler. */
+declare module '@docusaurus/router' {
+  export function useLocation(): { pathname: string; search: string; hash: string };
+}

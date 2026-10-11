@@ -1,0 +1,5 @@
+{
+  "toy.graph.Graph": { "kind": "class", "sig": "class Graph(name: str)", "doc": "A graph.", "url": "index.html#toy.graph.Graph" },
+  "toy.graph.Graph.output": { "kind": "method", "sig": "output(*values) -> None", "url": "index.html#toy.graph.Graph.output" },
+  "toy.graph.TensorType": { "kind": "class", "sig": "class TensorType()", "url": "index.html#toy.graph.TensorType" }
+}

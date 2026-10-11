@@ -37,6 +37,6 @@ Each site generator has its own setup page:
 - [Any other static site](/script-tag): the same script tag, with symbol
   data you generate.
 
-Every setup reads two data files. [Index files](/index-files) defines their
+Every setup reads the names JSON and info JSON. [Index files](/index-files) defines their
 schemas, and [how names resolve](/resolution) covers the matching rules. The
 [API reference](/api-reference) documents every export and option.

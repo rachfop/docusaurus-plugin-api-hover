@@ -15,7 +15,7 @@ Resolution is snippet-aware. After `from mypackage import mod`, the name
 the attribute `device.id` resolves to the `id` attribute of the class,
 following documented base classes when the class itself doesn't define it.
 
-Hovers read two data files: a names JSON listing the symbols, and an info
+Hovers read a names JSON listing the symbols, and an info
 JSON with signatures and doc summaries that the browser fetches on first
 hover. On Sphinx and MkDocs, `quickinfo build` writes both from the built
 site.

@@ -64,6 +64,18 @@
     "doc": "Language modules to enable for code annotation. Built in: \"python\". Default: ['python'].",
     "url": "../api-reference#pluginoptions"
   },
+  "PluginOptions.exclude": {
+    "kind": "option",
+    "sig": "exclude?: string[]",
+    "doc": "Route prefixes whose code blocks stay unannotated, under the site's baseUrl: pages for another language or another version of the API than the index describes, e.g. ['/stable/', '/api/mojo/']. Pass the same pages to the rehype pass's exclude. Default: [].",
+    "url": "../api-reference#pluginoptions"
+  },
+  "exclude": {
+    "kind": "option",
+    "sig": "exclude?: string[]",
+    "doc": "Route prefixes whose code blocks stay unannotated, under the site's baseUrl: pages for another language or another version of the API than the index describes, e.g. ['/stable/', '/api/mojo/']. Pass the same pages to the rehype pass's exclude. Default: [].",
+    "url": "../api-reference#pluginoptions"
+  },
   "QuickinfoRuntime": {
     "kind": "component",
     "sig": "QuickinfoRuntime({ children }: { children?: ReactNode }): ReactNode",
@@ -72,7 +84,7 @@
   },
   "rehypeQuickinfo": {
     "kind": "plugin",
-    "sig": "rehypeQuickinfo(options?: RehypeQuickinfoOptions): (tree: Node) => void",
+    "sig": "rehypeQuickinfo(options?: RehypeQuickinfoOptions): (tree: Node, file?: PageFile) => void",
     "doc": "The rehype pass. Stamps data-api-id onto prose mentions of API symbols at build time: inline code, and links to API pages. A mention annotates only when it resolves to one symbol; a link to an API page names its symbol even when the bare name is ambiguous.",
     "url": "../api-reference#rehypequickinfo"
   },
@@ -84,7 +96,7 @@
   "RehypeQuickinfoOptions.dataFile": {
     "kind": "option",
     "sig": "dataFile?: string",
-    "doc": "Path to the names JSON your index generator writes. A relative path resolves against the process working directory, which is the site directory under docusaurus build. Default: 'static/quickinfo/names.json'.",
+    "doc": "Path to the names JSON your index generator writes. A relative path resolves against the site directory (the nearest folder above each page holding a docusaurus.config.*), the same base the plugin uses. Default: 'static/quickinfo/names.json'.",
     "url": "../api-reference#rehypequickinfooptions"
   },
   "RehypeQuickinfoOptions.preferPrefixes": {
@@ -93,16 +105,10 @@
     "doc": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids. Default: [].",
     "url": "../api-reference#rehypequickinfooptions"
   },
-  "RehypeQuickinfoOptions.apiBasePath": {
+  "RehypeQuickinfoOptions.exclude": {
     "kind": "option",
-    "sig": "apiBasePath?: string",
-    "doc": "Docs base path under which symbol pages live. Link hrefs under it, like /api/python/generated/<id>.md, count as links to API pages. Default: '/api'.",
-    "url": "../api-reference#rehypequickinfooptions"
-  },
-  "apiBasePath": {
-    "kind": "option",
-    "sig": "apiBasePath?: string",
-    "doc": "Docs base path under which symbol pages live. Link hrefs under it, like /api/python/generated/<id>.md, count as links to API pages. Default: '/api'.",
+    "sig": "exclude?: Array<string | RegExp>",
+    "doc": "Pages to leave unannotated: a string matches when the page's source path contains it, a RegExp when it matches the path. Use it for reference pages of another language or another version of the API than the index describes, e.g. ['/api/mojo/', 'versioned_docs/']. Default: [].",
     "url": "../api-reference#rehypequickinfooptions"
   },
   "quickinfo": {
@@ -254,8 +260,8 @@
   },
   "resolveHref": {
     "kind": "function",
-    "sig": "resolveHref(href: string, index: SymbolIndex, apiBasePath?: unknown): string | undefined",
-    "doc": "Extract a symbol id from a link to an API page. A fragment naming a symbol wins (graph.html#max.graph.Graph, the shape Sphinx and mkdocstrings emit). Otherwise recognizes absolute doc paths (<apiBasePath>/...(generated/)?<id>(.md)?) and the relative hrefs common in generated markdown (<id>.md). Only ids in the index count, so links to anything else stay cold.",
+    "sig": "resolveHref(href: string, index: SymbolIndex): string | undefined",
+    "doc": "Extract a symbol id from a link to an API page on the same site. A fragment naming a symbol wins (graph.html#max.graph.Graph, the shape Sphinx and mkdocstrings emit); otherwise the page path's last segment (/api/python/generated/<id>.md, <id>/) names it. Links with a scheme or host (https://docs.python.org/...#int) point at another site's symbols and never resolve, and only ids in the index count.",
     "url": "../api-reference#resolvehref"
   },
   "resolveDotted": {

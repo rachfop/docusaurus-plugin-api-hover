@@ -95,6 +95,8 @@ let shownId: string | null = null;
 let shownEl: Element | null = null;
 /** The shown tooltip was opened by keyboard focus, not the pointer. */
 let shownByFocus = false;
+/** The element whose keyboard focus opened the tooltip. */
+let focusOrigin: Element | null = null;
 let highlightEls: Element[] = [];
 let tooltip: HTMLDivElement | null = null;
 let hideTimer: ReturnType<typeof setTimeout> | undefined;
@@ -117,11 +119,14 @@ function escapeHtml(text: string): string {
   });
 }
 
-/** Entry urls are relative to the info JSON, so one file serves every page
- * depth; only http(s) results are linked. */
+/** Entry urls that are relative paths resolve against the info JSON, so
+ * one file serves every page depth; root-relative ones (`/api/...`) name a
+ * path on this site, even when the info JSON is served from a CDN. Only
+ * http(s) results are linked. */
 function entryHref(url: string): string | undefined {
   try {
-    const href = new URL(url, infoHref());
+    const base = url.startsWith('/') && !url.startsWith('//') ? document.baseURI : infoHref();
+    const href = new URL(url, base);
     return href.protocol === 'http:' || href.protocol === 'https:' ? href.href : undefined;
   } catch {
     return undefined;
@@ -162,6 +167,9 @@ function renderTooltip(id: string, info: InfoEntry | null | undefined, anchor: E
   // can't linger over the page it jumps to.
   link?.addEventListener('click', () => hide());
   document.body.append(el);
+  for (const stale of Array.from(document.querySelectorAll(`[aria-describedby="${TOOLTIP_ID}"]`))) {
+    stale.removeAttribute('aria-describedby');
+  }
   anchor.setAttribute('aria-describedby', TOOLTIP_ID);
   placeTooltip(anchor);
 }
@@ -243,6 +251,7 @@ function hide(): void {
   shownId = null;
   shownEl = null;
   shownByFocus = false;
+  focusOrigin = null;
   destroyTooltip();
 }
 
@@ -330,7 +339,6 @@ function onMouseMove(e: MouseEvent): void {
 }
 
 function onMouseOut(e: MouseEvent): void {
-  if (shownByFocus) return;
   const target = e.target as Element | null;
   const fromToken = target?.closest?.('[data-api-id]');
   const fromTooltip = inTooltip(target);
@@ -342,9 +350,10 @@ function onMouseOut(e: MouseEvent): void {
     return;
   }
   // Off the token entirely: the pending settle timer dies with it, or
-  // the tooltip would pop under a pointer resting on plain text.
+  // the tooltip would pop under a pointer resting on plain text. A
+  // tooltip opened by keyboard focus stays until focus moves.
   cancelPending();
-  scheduleHide();
+  if (!shownByFocus) scheduleHide();
 }
 
 /**
@@ -353,9 +362,11 @@ function onMouseOut(e: MouseEvent): void {
  * `<code data-api-id>`, the common shape of a prose cross-reference).
  */
 function focusAnchor(target: Element): Element | null {
+  // Links and buttons only: a focusable code block (`<pre tabindex="0">`)
+  // contains many symbols and stands for none of them.
   return (
     target.closest('[data-api-id]') ??
-    (target.matches('a, button, [tabindex]') ? target.querySelector('[data-api-id]') : null)
+    (target.matches('a, button') ? target.querySelector('[data-api-id]') : null)
   );
 }
 
@@ -372,6 +383,7 @@ function onFocusIn(e: FocusEvent): void {
   cancelHide();
   // No settle delay: focus is a deliberate act.
   show(el, id, true);
+  focusOrigin = target;
 }
 
 function onFocusOut(e: FocusEvent): void {
@@ -393,9 +405,43 @@ function onScroll(): void {
   }
 }
 
-/** Escape dismisses the tooltip without moving the pointer (WCAG 1.4.13). */
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+
+/** The focusable element after (or before) `from` in document order,
+ * outside the tooltip. */
+function nextFocusable(from: Element, backward: boolean): HTMLElement | undefined {
+  const all = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
+    (el) => !inTooltip(el),
+  );
+  const at = all.indexOf(from as HTMLElement);
+  return at < 0 ? undefined : all[at + (backward ? -1 : 1)];
+}
+
+/**
+ * Escape dismisses the tooltip without moving the pointer (WCAG 1.4.13).
+ * Tab from the mention that opened a tooltip moves into the tooltip's
+ * reference link, and Tab from there continues after the mention: the
+ * tooltip sits at the end of <body>, out of the page's tab order.
+ */
 function onKeyDown(e: KeyboardEvent): void {
-  if (e.key === 'Escape' && (shownId || pending)) hide();
+  if (e.key === 'Escape' && (shownId || pending)) {
+    hide();
+    return;
+  }
+  if (e.key !== 'Tab' || !shownByFocus || !focusOrigin) return;
+  const link = tooltip?.querySelector<HTMLAnchorElement>('.quickinfo-link');
+  const active = document.activeElement;
+  if (!e.shiftKey && link && active === focusOrigin) {
+    e.preventDefault();
+    link.focus();
+  } else if (link && active === link) {
+    e.preventDefault();
+    const origin = focusOrigin;
+    const next = e.shiftKey ? (origin as HTMLElement) : nextFocusable(origin, false);
+    hide();
+    next?.focus();
+  }
 }
 
 /**

@@ -3,7 +3,7 @@ title: Index files
 description: The names JSON and info JSON schemas every quickinfo setup reads.
 ---
 
-Every quickinfo setup reads two data files: the names JSON, which lists the
+Every quickinfo setup reads the names JSON, which lists the
 symbols to annotate, and the info JSON, which holds what the tooltip shows.
 On [Sphinx](/sphinx) and [MkDocs](/mkdocs), `quickinfo build` writes both
 from the built site. On other sites, generate them from your API's source in

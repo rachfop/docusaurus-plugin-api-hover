@@ -10,9 +10,10 @@
  * (`--md-*`), Sphinx Furo (`--color-*`), Blume (`--blume-*`), then a light
  * fallback. They're set on body, where those themes define their light
  * and dark palettes, so the tooltip follows the site's color scheme.
- * Override any of them in your own CSS.
+ * `:where()` keeps the defaults at zero specificity: a site's own `body`
+ * rule overrides them wherever this stylesheet loads.
  */
-body {
+:where(body) {
   --quickinfo-bg: var(
     --ifm-background-surface-color,
     var(--md-default-bg-color, var(--color-background-primary, var(--blume-background, #fff)))

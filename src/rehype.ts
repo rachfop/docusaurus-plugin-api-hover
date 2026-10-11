@@ -12,7 +12,7 @@
  * is authoritative even when the bare name is ambiguous.
  */
 import path from 'path';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { visit } from 'unist-util-visit';
 import type { Node, Parent } from 'unist';
 import { checkCommonOptions } from './lib/options';
@@ -22,8 +22,8 @@ import { buildIndex, resolveHref, resolveProseMention, type SymbolIndex } from '
 interface RehypeQuickinfoOptions {
   /**
    * Path to the names JSON your index generator writes. A relative path
-   * resolves against the process working directory, which is the site
-   * directory under `docusaurus build`.
+   * resolves against the site directory (the nearest folder above each
+   * page holding a `docusaurus.config.*`), the same base the plugin uses.
    * @default 'static/quickinfo/names.json'
    */
   dataFile?: string;
@@ -34,11 +34,13 @@ interface RehypeQuickinfoOptions {
    */
   preferPrefixes?: string[];
   /**
-   * Docs base path under which symbol pages live. Link hrefs under it,
-   * like `/api/python/generated/<id>.md`, count as links to API pages.
-   * @default '/api'
+   * Pages to leave unannotated: a string matches when the page's source
+   * path contains it, a RegExp when it matches the path. Use it for
+   * reference pages of another language or another version of the API
+   * than the index describes, e.g. `['/api/mojo/', 'versioned_docs/']`.
+   * @default []
    */
-  apiBasePath?: string;
+  exclude?: Array<string | RegExp>;
 }
 
 interface HastElement extends Node {
@@ -47,9 +49,24 @@ interface HastElement extends Node {
   children?: Node[];
 }
 
-interface RehypeContext {
-  index: SymbolIndex;
-  apiBasePath: string;
+/** The page being transformed, as unified passes it. */
+interface PageFile {
+  path?: string;
+}
+
+const CONFIG_NAMES = ['js', 'ts', 'mjs', 'cjs', 'mts', 'cts'].map(
+  (ext) => `docusaurus.config.${ext}`,
+);
+
+/** The nearest directory above `file` holding a Docusaurus config. */
+function findSiteDir(file: string): string | undefined {
+  let dir = path.dirname(file);
+  for (;;) {
+    if (CONFIG_NAMES.some((name) => existsSync(path.join(dir, name)))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
+  }
 }
 
 /** Inline mentions of identifiers: <code>, or class="code" <em> spans. */
@@ -92,7 +109,9 @@ function plainText(node: HastElement): string {
  * rehypePlugins: [[quickinfoRehype, { dataFile }]],
  * ```
  */
-function rehypeQuickinfo(options: RehypeQuickinfoOptions = {}): (tree: Node) => void {
+function rehypeQuickinfo(
+  options: RehypeQuickinfoOptions = {},
+): (tree: Node, file?: PageFile) => void {
   if (typeof options !== 'object' || options === null) {
     throw new Error('quickinfo: rehype options must be an object');
   }
@@ -100,45 +119,79 @@ function rehypeQuickinfo(options: RehypeQuickinfoOptions = {}): (tree: Node) => 
   if (options.dataFile !== undefined && typeof options.dataFile !== 'string') {
     throw new Error('quickinfo: rehype "dataFile" must be a path');
   }
-  const dataFile = path.resolve(options.dataFile ?? 'static/quickinfo/names.json');
-  let ids: string[] | undefined;
-  try {
-    ids = JSON.parse(readFileSync(dataFile, 'utf-8')).ids;
-  } catch {
-    // Index not generated yet (e.g. first run before the docs prebuild);
-    // annotate nothing; the build must not fail on a missing index.
-    console.warn(
-      `quickinfo: rehype dataFile "${dataFile}" not readable; ` +
-        'prose mentions stay unannotated until the index is generated.',
-    );
-    return () => {};
+  const exclude = options.exclude ?? [];
+  if (
+    !Array.isArray(exclude) ||
+    exclude.some((e) => typeof e !== 'string' && !(e instanceof RegExp))
+  ) {
+    throw new Error('quickinfo: rehype "exclude" must be an array of strings or RegExps');
   }
-  if (!Array.isArray(ids) || ids.length === 0) return () => {};
+  const dataFile = options.dataFile ?? 'static/quickinfo/names.json';
 
-  const ctx: RehypeContext = {
-    index: buildIndex(ids, {}, options.preferPrefixes ?? []),
-    apiBasePath: options.apiBasePath ?? '/api',
+  // One index per resolved data path, loaded on first use: a relative path
+  // can only be resolved once a page reveals where the site lives.
+  const indexes = new Map<string, SymbolIndex | null>();
+  const indexFor = (file: PageFile | undefined): SymbolIndex | null => {
+    const base = path.isAbsolute(dataFile)
+      ? ''
+      : ((file?.path && findSiteDir(path.resolve(file.path))) ?? process.cwd());
+    const resolved = path.resolve(base, dataFile);
+    if (!indexes.has(resolved)) {
+      let ids: unknown;
+      try {
+        ids = JSON.parse(readFileSync(resolved, 'utf-8')).ids;
+      } catch {
+        // Index not generated yet (e.g. first run before the docs
+        // prebuild): annotate nothing; the build must not fail on it.
+        console.warn(
+          `quickinfo: rehype dataFile "${resolved}" not readable; ` +
+            'prose mentions stay unannotated until the index is generated.',
+        );
+      }
+      indexes.set(
+        resolved,
+        Array.isArray(ids) && ids.length > 0
+          ? buildIndex(ids as string[], {}, options.preferPrefixes ?? [])
+          : null,
+      );
+    }
+    return indexes.get(resolved) ?? null;
+  };
+  const excluded = (file: PageFile | undefined): boolean => {
+    const page = file?.path?.split(path.sep).join('/');
+    return (
+      !!page &&
+      exclude.some((rule) => (typeof rule === 'string' ? page.includes(rule) : rule.test(page)))
+    );
   };
 
-  return (tree: Node) => {
-    // Pass 1: mentions inside a link straight to the API page take their
-    // id from the href. The link is authoritative and disambiguates
-    // mentions whose bare name is not unique.
-    visit(tree, 'element', (node: HastElement, _index, _parent) => {
+  return (tree: Node, file?: PageFile) => {
+    if (excluded(file)) return;
+    const index = indexFor(file);
+    if (!index) return;
+    // Mentions inside links resolve from the link alone: a link to the
+    // symbol's page names it even when the bare name is ambiguous, and a
+    // link anywhere else (another site, another language's reference)
+    // means the mention isn't this index's symbol.
+    const linked = new WeakSet<HastElement>();
+
+    // Pass 1: links.
+    visit(tree, 'element', (node: HastElement) => {
       if (!node || node.tagName !== 'a') return;
       const href = node.properties && node.properties.href;
-      const id =
-        typeof href === 'string' ? resolveHref(href, ctx.index, ctx.apiBasePath) : undefined;
-      if (!id) return;
+      const id = typeof href === 'string' ? resolveHref(href, index) : undefined;
       let annotated = false;
       visit(node, 'element', (child: HastElement, _ci, parent) => {
         if (
-          child &&
-          isMentionElement(child) &&
-          parent &&
-          (parent as HastElement).tagName !== 'pre' &&
-          !child.properties?.dataApiId
+          !child ||
+          !isMentionElement(child) ||
+          !parent ||
+          (parent as HastElement).tagName === 'pre'
         ) {
+          return;
+        }
+        linked.add(child);
+        if (id && !child.properties?.dataApiId) {
           child.properties = child.properties ?? {};
           child.properties.dataApiId = id;
           annotated = true;
@@ -148,8 +201,8 @@ function rehypeQuickinfo(options: RehypeQuickinfoOptions = {}): (tree: Node) => 
       // member references use the short name as the link text. Annotate
       // the link itself when its text is the symbol id or its final
       // segment.
-      if (!annotated) {
-        const text = plainText(node).trim();
+      if (id && !annotated) {
+        const text = plainText(node).trim().replace(/\(\)$/, '');
         if (text === id || text === id.split('.').pop()) {
           node.properties = node.properties ?? {};
           node.properties.dataApiId = id;
@@ -161,11 +214,11 @@ function rehypeQuickinfo(options: RehypeQuickinfoOptions = {}): (tree: Node) => 
     visit(tree, 'element', (node: HastElement, _index, parent: Parent) => {
       if (!node || !isMentionElement(node) || !parent || (parent as HastElement).tagName === 'pre')
         return;
-      if (node.properties?.dataApiId) return;
+      if (linked.has(node) || node.properties?.dataApiId) return;
       if (!node.children || node.children.length === 0) return;
       const text = plainText(node).trim();
       if (!text) return;
-      const id = resolveProseMention(text, ctx.index);
+      const id = resolveProseMention(text, index);
       if (id) {
         node.properties = node.properties ?? {};
         node.properties.dataApiId = id;
