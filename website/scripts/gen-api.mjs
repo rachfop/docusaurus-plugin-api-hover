@@ -4,7 +4,7 @@
  * defaults have one source of truth: the JSDoc in src/.
  *
  * Outputs:
- *  - docs/09-api-reference.mdx: one section per entry point, with a
+ *  - docs/(reference)/api-reference.mdx: one section per entry point, with a
  *    signature block and a Blume TypeTable for each function's parameters
  *    and each interface's properties.
  *  - public/quickinfo/names.json and info.json: the index and tooltip
@@ -442,7 +442,7 @@ const sections = SECTIONS.map((section) => {
 
 const { names, info } = buildHoverData(sections);
 const outputs = [
-  [path.join(website, 'docs/09-api-reference.mdx'), renderPage(sections)],
+  [path.join(website, 'docs/(reference)/api-reference.mdx'), renderPage(sections)],
   [path.join(website, 'public/quickinfo/names.json'), `${JSON.stringify(names, null, 2)}\n`],
   [path.join(website, 'public/quickinfo/info.json'), `${JSON.stringify(info, null, 2)}\n`],
 ];

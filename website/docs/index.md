@@ -24,20 +24,16 @@ Resolution is snippet-aware. After `from max import driver`, the name
 `max.driver.Device.id`: `Accelerator` doesn't define `id` itself, so
 quickinfo follows its documented base class, `Device`.
 
-## Install
-
-```bash
-npm install quickinfo
-```
-
 ## Set up your site
 
-Each site generator has its own setup page:
+[Get started](/get-started) has one prompt that sets quickinfo up through
+your LLM coding assistant. To set it up by hand, follow the integration page
+for your site generator:
 
 - [Docusaurus](/docusaurus): a plugin annotates code blocks and prose at
   build time.
-- [Astro and Blume](/astro): an integration annotates in the browser. The
-  hovers on this site run that way.
+- [Astro](/astro) and [Blume](/blume): an integration annotates in the
+  browser. The hovers on this site run that way.
 - [Sphinx](/sphinx) and [MkDocs](/mkdocs): the `quickinfo build` command
   turns a built site's `objects.inv` and API pages into hover data, and one
   script tag does the rest.
@@ -46,5 +42,5 @@ Each site generator has its own setup page:
 
 Every setup reads the names JSON and info JSON. [Index files](/index-files)
 defines their schemas, and [how names resolve](/resolution) covers the
-matching rules. The [API reference](/api-reference) documents every
-export and option.
+matching rules. The [API reference](/api-reference) documents every export
+and option.

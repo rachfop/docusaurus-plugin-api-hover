@@ -1,0 +1,48 @@
+---
+title: Set up Blume
+description: Add the quickinfo integration to a Blume docs site.
+sidebar:
+  label: Blume
+---
+
+:::tip
+To have an LLM add quickinfo for you, paste the [Get started](/get-started)
+prompt into it. This page covers the manual steps.
+:::
+
+Blume runs on Astro, so quickinfo uses its Astro integration there. The
+integration injects one script on every page, which fetches the names JSON,
+marks code blocks and prose mentions, and runs the tooltip. This site works
+that way: every hover on it comes from the integration.
+
+## Install
+
+```bash
+npm install quickinfo
+```
+
+## Add the data files
+
+Generate the [names JSON and info JSON](/index-files) and write both to
+`public/quickinfo/`. The integration fetches `/quickinfo/names.json` and
+`/quickinfo/info.json` by default, under the site's `deployment.base` path.
+
+## Add the integration
+
+Add `quickinfo()` to `integrations` in `blume.config.ts`:
+
+```ts
+import quickinfo from 'quickinfo/astro';
+import { defineConfig } from 'blume';
+
+export default defineConfig({
+  integrations: [quickinfo()],
+});
+```
+
+To serve the data files from somewhere else, pass
+[`namesUrl` and `infoUrl`](/api-reference#quickinfoastrooptions). A
+root-relative URL resolves under the site's base path.
+
+The tooltip takes its colors from Blume's palette and follows the light and
+dark theme toggle.

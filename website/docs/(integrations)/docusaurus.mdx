@@ -1,11 +1,24 @@
 ---
 title: Set up Docusaurus
 description: Register the quickinfo plugin and rehype pass in a Docusaurus site.
+sidebar:
+  label: Docusaurus
 ---
+
+:::tip
+To have an LLM add quickinfo for you, paste the [Get started](/get-started)
+prompt into it. This page covers the manual steps.
+:::
 
 On Docusaurus, quickinfo annotates at build time. The plugin annotates code
 blocks as they render, and the rehype pass annotates prose mentions, so the
 HTML ships with every symbol already marked.
+
+## Install
+
+```bash
+npm install quickinfo
+```
 
 ## Add the data files
 
