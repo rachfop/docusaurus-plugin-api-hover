@@ -71,11 +71,14 @@ async function capture(page, theme) {
 
   // Frame the whole code block when the symbol is in one, so the shot
   // shows the snippet the hover resolves against; prose frames the token.
-  const anchorBox = await page.locator(target).first().evaluate((el) => {
-    const frame = el.closest('figure') ?? el.closest('pre') ?? el;
-    const r = frame.getBoundingClientRect();
-    return { x: r.x, y: r.y, width: r.width, height: r.height };
-  });
+  const anchorBox = await page
+    .locator(target)
+    .first()
+    .evaluate((el) => {
+      const frame = el.closest('figure') ?? el.closest('pre') ?? el;
+      const r = frame.getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    });
   const tooltipBox = await page.locator('.quickinfo-tooltip').boundingBox();
   if (!anchorBox || !tooltipBox) throw new Error('missing anchor or tooltip box');
   const clip = {

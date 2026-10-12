@@ -8,12 +8,8 @@
     "max.driver.accelerator_count"
   ],
   "bases": {
-    "max.driver.Accelerator": [
-      "max.driver.Device"
-    ],
-    "max.driver.CPU": [
-      "max.driver.Device"
-    ]
+    "max.driver.Accelerator": ["max.driver.Device"],
+    "max.driver.CPU": ["max.driver.Device"]
   },
   "info": {
     "max.driver.CPU": {
