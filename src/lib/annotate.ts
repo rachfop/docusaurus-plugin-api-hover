@@ -245,9 +245,11 @@ export function safeDecode(text: string): string {
  * Extract a symbol id from a link to an API page on the same site. A
  * fragment naming a symbol wins (`graph.html#max.graph.Graph`, the shape
  * Sphinx and mkdocstrings emit); otherwise the page path's last segment
- * (`/api/python/generated/<id>.md`, `<id>/`) names it. Links with a scheme
- * or host (`https://docs.python.org/...#int`) point at another site's
- * symbols and never resolve, and only ids in the index count.
+ * names it when it reads as a symbol page: a dotted id (`max.graph.Graph/`)
+ * or a Markdown file (`Graph.md`). A plain path segment (`/quickinfo/`, a
+ * site's own base path) is a page, not a symbol. Links with a scheme or
+ * host (`https://docs.python.org/...#int`) point at another site's symbols
+ * and never resolve, and only ids in the index count.
  *
  * @param href The link's `href` as written.
  * @param index The resolution index.
@@ -259,8 +261,15 @@ export function resolveHref(href: string, index: SymbolIndex): string | undefine
   if (hash && index.idSet.has(hash)) return hash;
   if (href.startsWith('#')) return undefined;
   const pathPart = href.split(/[?#]/)[0]!.replace(/\/$/, '');
-  const last = (pathPart.split('/').pop() || '').match(/^([\w.]+?)(?:\.mdx?)?$/);
-  return last && index.idSet.has(last[1]!) ? last[1] : undefined;
+  const segment = pathPart.split('/').pop() || '';
+  const last = segment.match(/^([\w.]+?)(\.mdx?)?$/);
+  if (!last || (!last[2] && !last[1]!.includes('.'))) return undefined;
+  return index.idSet.has(last[1]!) ? last[1] : undefined;
+}
+
+/** Whether a link leaves the site: it has a scheme or a host. */
+export function isExternalHref(href: string): boolean {
+  return /^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(href);
 }
 
 /**

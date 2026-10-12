@@ -1,42 +1,55 @@
 ---
 title: Introduction
-description: IDE-style API hovers for Docusaurus, Astro, Sphinx, MkDocs, and any static docs site.
+description: Editor-style API hovers for Docusaurus, Astro, Sphinx, MkDocs, and any other static site generator.
 ---
 
-quickinfo gives your API docs the hovers an editor shows. Identifiers that
-reference a documented symbol get a dotted underline, in code blocks and in
-prose. Hover one and every other mention of the symbol on the page lights
-up, and a tooltip shows its kind, full name, signature, docstring summary,
-and a link to its reference page. Keyboard focus opens the same tooltip, and
-Escape closes it.
+In an editor, hovering a symbol shows its signature and documentation,
+which the language server provides through the Language Server Protocol
+(LSP). quickinfo brings that hover to your API docs. Code blocks, inline
+code, and links that reference a documented symbol get a dotted underline.
+Hover one and a tooltip shows the symbol's kind, full name, signature,
+docstring summary, and a link to its reference page, and every other mention
+of the symbol on the page lights up. Readers can scan an API without leaving
+the page they're on. Keyboard focus opens the same tooltip, and Escape
+closes it.
 
-![Hovering the buildIndex mention on this site's API reference page shows a tooltip with the FUNCTION badge, the full name, its signature, its doc summary, and a link to the reference page.](/hover-light.png)
+quickinfo works with Docusaurus, Astro and Blume, Sphinx, MkDocs, and any
+other static site generator.
 
-Resolution is snippet-aware. After `from mypackage import mod`, the name
-`mod.Thing` resolves to `mypackage.mod.Thing`. After `device = Accelerator()`,
-the attribute `device.id` resolves to the `id` attribute of the class,
-following documented base classes when the class itself doesn't define it.
+![Hovering CPU in a MAX code example shows a tooltip with the CLASS badge, the full name max.driver.CPU, its signature, its doc summary, and a link to its reference page.](/hover-light.png)
 
-## Install
+Resolution is snippet-aware. Hover the names in this example, which uses
+real data from the MAX Python API:
 
-```bash
-npm install quickinfo
+```python
+from max import driver
+
+device = driver.Accelerator()
+print(device.id)
+cpu = driver.CPU()
 ```
+
+`driver.CPU` resolves to `max.driver.CPU` through the import. `device.id`
+resolves to `max.driver.Device.id`: `device` holds an `Accelerator`, which
+inherits `id` from its documented base class, `Device`.
 
 ## Set up your site
 
-Each site generator has its own setup page:
+[Get started](/get-started) has one prompt that sets quickinfo up through
+your LLM coding assistant. To set it up by hand, follow the integration page
+for your site generator:
 
 - [Docusaurus](/docusaurus): a plugin annotates code blocks and prose at
   build time.
-- [Astro and Blume](/astro): an integration annotates in the browser. The
-  hovers on this site run that way.
+- [Astro](/astro) and [Blume](/blume): an integration annotates in the
+  browser. The hovers on this site run that way.
 - [Sphinx](/sphinx) and [MkDocs](/mkdocs): the `quickinfo build` command
   turns a built site's `objects.inv` and API pages into hover data, and one
   script tag does the rest.
-- [Any other static site](/script-tag): the same script tag, with symbol
-  data you generate.
+- [Any other static site generator](/script-tag): the same script tag,
+  with symbol data you generate.
 
-Every setup reads the names JSON and info JSON. [Index files](/index-files) defines their
-schemas, and [how names resolve](/resolution) covers the matching rules. The
-[API reference](/api-reference) documents every export and option.
+Every setup reads the names JSON and info JSON. [Index files](/index-files)
+defines their schemas, and [symbol resolution](/resolution) covers the
+matching rules. The [API reference](/api-reference) documents every export
+and option.

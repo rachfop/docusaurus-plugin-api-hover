@@ -5,7 +5,7 @@
     "node_modules/**",
     "lib/**",
     "tests/e2e/sites/**",
-    "website/docs/09-api-reference.mdx",
+    "website/docs/(reference)/api-reference.mdx",
     "website/public/quickinfo/**"
   ]
 }

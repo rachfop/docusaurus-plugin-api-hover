@@ -1,7 +1,14 @@
 ---
 title: Set up Sphinx
 description: Add quickinfo hovers to a Sphinx site with autodoc.
+sidebar:
+  label: Sphinx
 ---
+
+:::tip
+To have an LLM add quickinfo for you, paste the [Get started](/get-started)
+prompt into it. This page covers the manual steps.
+:::
 
 On Sphinx, the symbol data comes from the site itself. Every HTML build
 writes `objects.inv`, the inventory intersphinx reads, which lists each
@@ -38,7 +45,7 @@ output works under any deploy path.
 
 Code blocks in Python (`python`, `py`, `pycon`, and Sphinx's default
 highlighting) resolve against the snippet's imports and bindings, as
-[how names resolve](/resolution) describes. Cross-references such as
+[symbol resolution](/resolution) describes. Cross-references such as
 `` :class:`mypkg.Graph` `` take their symbol from the link target, and inline
 literals resolve by name. Links in the sidebar and table of contents stay
 plain.

@@ -391,16 +391,36 @@ check('an unclosed bracket ends at the next column-0 statement', () => {
   assert.deepStrictEqual(parsePythonImports(code), { Graph: 'max.graph.Graph' });
 });
 
-check('rehype leaves inline code in links to other pages unresolved', () => {
+check('rehype leaves inline code in links to other sites unresolved', () => {
   const dataFile = tempDataFile({ ids: IDS });
   const transform = rehype({ dataFile });
   const tree = el('root', [
     el('p', [
-      el('a', [el('code', [text('AlgebraicDim')])], { href: '/api/mojo/layout/#algebraicdim' }),
+      el('a', [el('code', [text('AlgebraicDim')])], {
+        href: 'https://mojolang.org/docs/layout/#algebraicdim',
+      }),
     ]),
   ]);
   transform(tree);
   assert.deepStrictEqual(collectApiIds(tree), []);
+});
+
+check('rehype resolves inline code in same-site links by name', () => {
+  const dataFile = tempDataFile({ ids: IDS });
+  const transform = rehype({ dataFile });
+  // A heading anchor on the reference page names no symbol id.
+  const tree = el('root', [
+    el('p', [el('a', [el('code', [text('AlgebraicDim')])], { href: '/api-reference#options' })]),
+  ]);
+  transform(tree);
+  assert.deepStrictEqual(collectApiIds(tree), ['AlgebraicDim=>max.nn.kernels.AlgebraicDim']);
+});
+
+check('a plain path segment is a page, not a symbol', () => {
+  const index = buildIndex(['quickinfo', 'max.graph.Graph'], {}, []);
+  assert.strictEqual(resolveHref('/quickinfo/', index), undefined);
+  assert.strictEqual(resolveHref('/api/max.graph.Graph/', index), 'max.graph.Graph');
+  assert.strictEqual(resolveHref('quickinfo.md', index), 'quickinfo');
 });
 
 check('rehype skips excluded pages', () => {

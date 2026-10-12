@@ -16,7 +16,13 @@ import { existsSync, readFileSync } from 'fs';
 import { visit } from 'unist-util-visit';
 import type { Node, Parent } from 'unist';
 import { checkCommonOptions } from './lib/options';
-import { buildIndex, resolveHref, resolveProseMention, type SymbolIndex } from './lib/annotate';
+import {
+  buildIndex,
+  isExternalHref,
+  resolveHref,
+  resolveProseMention,
+  type SymbolIndex,
+} from './lib/annotate';
 
 /** Options for the rehype pass, passed in the markdown config. */
 interface RehypeQuickinfoOptions {
@@ -169,10 +175,10 @@ function rehypeQuickinfo(
     if (excluded(file)) return;
     const index = indexFor(file);
     if (!index) return;
-    // Mentions inside links resolve from the link alone: a link to the
-    // symbol's page names it even when the bare name is ambiguous, and a
-    // link anywhere else (another site, another language's reference)
-    // means the mention isn't this index's symbol.
+    // A link to a symbol's page names it even when the bare name is
+    // ambiguous. A link to another site means the mention is that site's
+    // symbol, so its inline code stays plain; inline code in other
+    // same-site links resolves by name in pass 2.
     const linked = new WeakSet<HastElement>();
 
     // Pass 1: links.
@@ -180,6 +186,7 @@ function rehypeQuickinfo(
       if (!node || node.tagName !== 'a') return;
       const href = node.properties && node.properties.href;
       const id = typeof href === 'string' ? resolveHref(href, index) : undefined;
+      const external = typeof href === 'string' && isExternalHref(href);
       let annotated = false;
       visit(node, 'element', (child: HastElement, _ci, parent) => {
         if (
@@ -190,7 +197,7 @@ function rehypeQuickinfo(
         ) {
           return;
         }
-        linked.add(child);
+        if (id || external) linked.add(child);
         if (id && !child.properties?.dataApiId) {
           child.properties = child.properties ?? {};
           child.properties.dataApiId = id;

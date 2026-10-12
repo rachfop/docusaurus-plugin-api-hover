@@ -505,7 +505,7 @@ Returns `string | undefined`: The symbol id, or `undefined` when the mention is 
 
 ### resolveHref
 
-Extract a symbol id from a link to an API page on the same site. A fragment naming a symbol wins (`graph.html#max.graph.Graph`, the shape Sphinx and mkdocstrings emit); otherwise the page path's last segment (`/api/python/generated/<id>.md`, `<id>/`) names it. Links with a scheme or host (`https://docs.python.org/...#int`) point at another site's symbols and never resolve, and only ids in the index count.
+Extract a symbol id from a link to an API page on the same site. A fragment naming a symbol wins (`graph.html#max.graph.Graph`, the shape Sphinx and mkdocstrings emit); otherwise the page path's last segment names it when it reads as a symbol page: a dotted id (`max.graph.Graph/`) or a Markdown file (`Graph.md`). A plain path segment (`/quickinfo/`, a site's own base path) is a page, not a symbol. Links with a scheme or host (`https://docs.python.org/...#int`) point at another site's symbols and never resolve, and only ids in the index count.
 
 ```ts
 resolveHref(href: string, index: SymbolIndex): string | undefined

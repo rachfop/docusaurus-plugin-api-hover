@@ -1,7 +1,14 @@
 ---
 title: Set up MkDocs
 description: Add quickinfo hovers to an MkDocs site with mkdocstrings.
+sidebar:
+  label: MkDocs
 ---
+
+:::tip
+To have an LLM add quickinfo for you, paste the [Get started](/get-started)
+prompt into it. This page covers the manual steps.
+:::
 
 On MkDocs with [mkdocstrings](https://mkdocstrings.github.io/), the symbol
 data comes from the site itself. mkdocstrings writes `objects.inv`, an
@@ -45,7 +52,7 @@ under any deploy path.
 ## What gets annotated
 
 Python code blocks resolve against the snippet's imports and bindings, as
-[how names resolve](/resolution) describes. Cross-references such as
+[symbol resolution](/resolution) describes. Cross-references such as
 `[Graph][mypkg.Graph]` take their symbol from the link target, and inline
 code resolves by name. Type names in API signatures resolve too. Links in
 the navigation and table of contents stay plain. Tooltips follow Material's

@@ -4,29 +4,17 @@
     "pluginQuickinfo",
     "validateOptions",
     "PluginOptions",
-    "PluginOptions.dataFile",
     "dataFile",
-    "PluginOptions.infoUrl",
     "infoUrl",
-    "PluginOptions.preferPrefixes",
     "preferPrefixes",
-    "PluginOptions.languages",
     "languages",
-    "PluginOptions.exclude",
     "exclude",
     "QuickinfoRuntime",
     "rehypeQuickinfo",
     "RehypeQuickinfoOptions",
-    "RehypeQuickinfoOptions.dataFile",
-    "RehypeQuickinfoOptions.preferPrefixes",
-    "RehypeQuickinfoOptions.exclude",
     "quickinfo",
     "QuickinfoAstroOptions",
-    "QuickinfoAstroOptions.namesUrl",
     "namesUrl",
-    "QuickinfoAstroOptions.infoUrl",
-    "QuickinfoAstroOptions.preferPrefixes",
-    "QuickinfoAstroOptions.languages",
     "ScriptAttributes",
     "ScriptAttributes.namesUrl",
     "ScriptAttributes.infoUrl",
@@ -75,6 +63,19 @@
     "PackedNames",
     "PackedNames.tree",
     "PackedNames.bases",
-    "PackedNames.version"
-  ]
+    "PackedNames.version",
+    "max.driver.CPU",
+    "max.driver.Accelerator",
+    "max.driver.Device",
+    "max.driver.Device.id",
+    "max.driver.accelerator_count"
+  ],
+  "bases": {
+    "max.driver.Accelerator": [
+      "max.driver.Device"
+    ],
+    "max.driver.CPU": [
+      "max.driver.Device"
+    ]
+  }
 }

@@ -20,6 +20,7 @@
 import {
   getSnippetContext,
   resolveDotted,
+  isExternalHref,
   resolveHref,
   resolveProseMention,
   type SymbolIndex,
@@ -48,6 +49,7 @@ const LANG_CLASS_RE = /(?:^|\s)(?:language|lang|highlight)-([\w+-]+)/;
 const CHROME_SELECTOR = [
   'nav',
   '[role="navigation"]',
+  '[data-blume-header]',
   '[data-blume-toc]',
   '[data-blume-nav-drawer]',
   '.table-of-contents',
@@ -113,14 +115,20 @@ function annotateLinks(index: SymbolIndex, root: ParentNode): void {
     if (link.closest('pre') || link.hasAttribute('data-api-id') || link.closest(CHROME_SELECTOR)) {
       continue;
     }
-    const id = resolveHref(link.getAttribute('href') ?? '', index);
+    const href = link.getAttribute('href') ?? '';
+    const id = resolveHref(href, index);
     const codes = Array.from(link.querySelectorAll('code'));
-    // Inline code inside a link resolves from the link alone: a link
-    // anywhere other than this index's symbol pages (another site, another
-    // language's reference) means the mention isn't this index's symbol.
+    // A link to a symbol names it, even when the bare name is ambiguous. A
+    // link to another site (docs.python.org, another language's reference)
+    // means the mention is that site's symbol, so its inline code stays
+    // plain. Inline code in other same-site links resolves by name below.
     for (const code of codes) {
-      resolvedMentions.add(code);
-      if (id && !code.hasAttribute('data-api-id')) code.setAttribute('data-api-id', id);
+      if (id) {
+        resolvedMentions.add(code);
+        if (!code.hasAttribute('data-api-id')) code.setAttribute('data-api-id', id);
+      } else if (isExternalHref(href)) {
+        resolvedMentions.add(code);
+      }
     }
     if (!id || codes.length > 0) continue;
     // A bare link (mkdocstrings autorefs, signature type links): annotate

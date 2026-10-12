@@ -1,0 +1,46 @@
+---
+title: Get started
+description: Add quickinfo to your docs site by handing one prompt to your LLM coding assistant.
+---
+
+The fastest way to add quickinfo is to let your LLM coding assistant do it.
+Copy the prompt below into Claude Code, Cursor, or any assistant that can
+read your repository and run commands. The prompt has the assistant find
+your site generator, follow that generator's setup page, wire symbol data
+into your build, and check the result in a browser.
+
+<Prompt description="Add **quickinfo** hovers to this docs site." actions={["copy", "cursor"]}>
+Add quickinfo to this repository's documentation site. quickinfo gives API docs editor-style hovers: identifiers in code blocks, inline code, and links that reference a documented API symbol get a dotted underline, and hovering one shows a tooltip with the symbol's kind, signature, docstring summary, and a link to its reference page. Docs: https://rachfop.github.io/quickinfo/
+
+1. Find the docs site and its generator. Look for `docusaurus.config.*` (Docusaurus), `blume.config.ts` (Blume), `astro.config.*` (Astro or Starlight), `conf.py` next to `.rst` or `.md` sources (Sphinx), or `mkdocs.yml` (MkDocs). Anything else, such as Hugo, Jekyll, or hand-written HTML, counts as "any other static site generator". If the repository holds more than one docs site, ask me which one to set up.
+
+2. Read the setup page for that generator, in Markdown, and follow it:
+   - Docusaurus: https://rachfop.github.io/quickinfo/docusaurus.md
+   - Astro and Starlight: https://rachfop.github.io/quickinfo/astro.md
+   - Blume: https://rachfop.github.io/quickinfo/blume.md
+   - Sphinx: https://rachfop.github.io/quickinfo/sphinx.md
+   - MkDocs: https://rachfop.github.io/quickinfo/mkdocs.md
+   - Any other static site generator: https://rachfop.github.io/quickinfo/script-tag.md
+
+3. Provide the symbol data. On Sphinx, and on MkDocs with mkdocstrings, run `quickinfo build` on the built site after every docs build, as the setup page shows. On every other generator, quickinfo needs a names JSON and an info JSON, with the schemas at https://rachfop.github.io/quickinfo/index-files.md. Write a small script that generates both from the API's existing source of truth (for example a Sphinx `objects.inv`, generated API reference pages, or the package's own docstrings), and run it before every docs build. Don't hand-write the data.
+
+4. Add the build step to the scripts the project already uses (package.json scripts, a Makefile, or the CI workflow that builds the docs), so the data regenerates on every build.
+
+5. Verify in a browser. Build and serve the site, open a page with a Python code block that imports from the documented package, and confirm that API names have a dotted underline and that hovering one shows its signature. Check the browser console for warnings that start with `quickinfo:`, and fix what they report. If no code block exists, check an inline code mention of an API name instead.
+
+6. Tell me what you changed, which command regenerates the data, and the page you verified.
+
+Rules for symbol resolution are at https://rachfop.github.io/quickinfo/resolution.md, and every option is at https://rachfop.github.io/quickinfo/api-reference.md.
+
+</Prompt>
+
+## What the prompt does
+
+The assistant identifies your generator, then follows its setup page under
+Integrations: the same steps you'd take by hand. It generates the symbol
+data from your API's own source of truth and adds that step to your build,
+so hovers stay current as the API changes. It finishes by checking hovers in
+a browser and reporting the command that regenerates the data.
+
+To set quickinfo up by hand, pick your generator under Integrations in the
+sidebar.

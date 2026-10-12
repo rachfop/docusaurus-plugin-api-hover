@@ -4,11 +4,12 @@
  * defaults have one source of truth: the JSDoc in src/.
  *
  * Outputs:
- *  - docs/09-api-reference.mdx: one section per entry point, with a
+ *  - docs/(reference)/api-reference.mdx: one section per entry point, with a
  *    signature block and a Blume TypeTable for each function's parameters
  *    and each interface's properties.
  *  - public/quickinfo/names.json and info.json: the index and tooltip
- *    data the site's own quickinfo() integration serves.
+ *    data the site's own quickinfo() integration serves, plus the real MAX
+ *    entries in demo/max.json for the introduction's live example.
  *
  * JSDoc read per declaration: the comment body (description; its first
  * paragraph is the tooltip text), @param, @returns, @default, @example.
@@ -34,8 +35,8 @@ const PAGE_ROUTE = '../api-reference';
 
 /**
  * Page layout. An item is a declaration name, or `{ name, file }` when it
- * lives outside the section's file. `bareMembers` sections also publish
- * each property under its bare name (`dataFile`), first section wins, so
+ * lives outside the section's file. `bareMembers` sections publish each
+ * property under its bare name only (`dataFile`), first section wins, so
  * prose mentions of an option resolve without the interface prefix.
  * `usage` names a string constant rendered as a code block (CLI help).
  */
@@ -393,13 +394,20 @@ function buildHoverData(sections) {
           ).trim(),
           url,
         };
-        add(`${name}.${prop.name}`, entry);
-        if (section.bareMembers) add(prop.name, entry);
+        // Option interfaces publish each option once, under its bare name
+        // (first section wins), so prose `dataFile` names one symbol. A
+        // `PluginOptions.dataFile` id beside it would make the bare name
+        // ambiguous.
+        add(section.bareMembers ? prop.name : `${name}.${prop.name}`, entry);
       }
     }
   }
   const version = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8')).version;
-  return { names: { version, ids: Object.keys(info) }, info };
+  // The introduction's live example hovers real MAX symbols; their data
+  // lives in demo/max.json, beside the generated quickinfo symbols.
+  const demo = JSON.parse(readFileSync(path.join(website, 'demo/max.json'), 'utf8'));
+  for (const id of demo.ids) add(id, demo.info[id]);
+  return { names: { version, ids: Object.keys(info), bases: demo.bases }, info };
 }
 
 // --- main -----------------------------------------------------------------
@@ -442,7 +450,7 @@ const sections = SECTIONS.map((section) => {
 
 const { names, info } = buildHoverData(sections);
 const outputs = [
-  [path.join(website, 'docs/09-api-reference.mdx'), renderPage(sections)],
+  [path.join(website, 'docs/(reference)/api-reference.mdx'), renderPage(sections)],
   [path.join(website, 'public/quickinfo/names.json'), `${JSON.stringify(names, null, 2)}\n`],
   [path.join(website, 'public/quickinfo/info.json'), `${JSON.stringify(info, null, 2)}\n`],
 ];
