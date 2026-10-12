@@ -396,5 +396,89 @@
     "sig": "max.driver.accelerator_count() → int",
     "doc": "Returns number of accelerator devices available.",
     "url": "https://max.modular.com/api/python/generated/max.driver.accelerator_count/#max.driver.accelerator_count"
+  },
+  "max.driver.Buffer": {
+    "kind": "class",
+    "sig": "class max.driver.Buffer(dtype: max.dtype.DType, shape: collections.abc.Sequence[int], device: max.driver.Device | None = None, usage: max.driver.Usage = Usage.DEFAULT)\nclass max.driver.Buffer(dtype: max.dtype.DType, shape: collections.abc.Sequence[int], stream: max.driver.DeviceQueue, usage: max.driver.Usage = Usage.DEFAULT)\nclass max.driver.Buffer(shape: ndarray[writable=False], device: max.driver.Device)",
+    "doc": "Device-resident buffer representation.",
+    "url": "https://max.modular.com/api/python/generated/max.driver.Buffer/#max.driver.Buffer"
+  },
+  "max.dtype.DType": {
+    "kind": "class",
+    "sig": "class max.dtype.DType(value, names=<not given>, *values, module=None, qualname=None, type=None, start=1, boundary=None)",
+    "doc": "The tensor data type.",
+    "url": "https://max.modular.com/api/python/generated/max.dtype.DType/#max.dtype.DType"
+  },
+  "max.dtype.DType.float32": {
+    "kind": "property",
+    "sig": "float32 = 81",
+    "doc": "32-bit IEEE 754 single-precision floating-point. 1 sign bit, 8 exponent bits, 23 mantissa bits.",
+    "url": "https://max.modular.com/api/python/generated/max.dtype.DType/#max.dtype.DType.float32"
+  },
+  "max.engine.InferenceSession": {
+    "kind": "class",
+    "sig": "class max.engine.InferenceSession(devices=(), num_threads=None, *, custom_extensions=None, precompiled_mefs=None, export_mefs=None)",
+    "doc": "Manages an inference session in which you can load and run models.",
+    "url": "https://max.modular.com/api/python/generated/max.engine.InferenceSession/#max.engine.InferenceSession"
+  },
+  "max.graph.DeviceRef": {
+    "kind": "class",
+    "sig": "class max.graph.DeviceRef(device_type, id=0)",
+    "doc": "A symbolic device representation.",
+    "url": "https://max.modular.com/api/python/generated/max.graph.DeviceRef/#max.graph.DeviceRef"
+  },
+  "max.graph.DeviceRef.CPU": {
+    "kind": "method",
+    "sig": "static CPU(id=0)",
+    "doc": "Creates a CPU device reference.",
+    "url": "https://max.modular.com/api/python/generated/max.graph.DeviceRef/#max.graph.DeviceRef.CPU"
+  },
+  "max.graph.Graph": {
+    "kind": "class",
+    "sig": "class max.graph.Graph(name, forward=None, input_types=(), path=None, *args, custom_extensions=[], kernel_library=None, module=None, strict_device_placement=DevicePlacementPolicy.Warn, is_device_graph=False, **kwargs)",
+    "doc": "Represents a single MAX graph.",
+    "url": "https://max.modular.com/api/python/generated/max.graph.Graph/#max.graph.Graph"
+  },
+  "max.graph.Graph.inputs": {
+    "kind": "property",
+    "sig": "property inputs: Sequence[Value[Any]]",
+    "doc": "The input values of the graph.",
+    "url": "https://max.modular.com/api/python/generated/max.graph.Graph/#max.graph.Graph.inputs"
+  },
+  "max.graph.Graph.output": {
+    "kind": "method",
+    "sig": "output(*outputs)",
+    "doc": "Sets the output values of the graph and finalizes construction.",
+    "url": "https://max.modular.com/api/python/generated/max.graph.Graph/#max.graph.Graph.output"
+  },
+  "max.graph.TensorType": {
+    "kind": "class",
+    "sig": "class max.graph.TensorType(dtype, shape, device, _layout=None)",
+    "doc": "A symbolic tensor type.",
+    "url": "https://max.modular.com/api/python/generated/max.graph.TensorType/#max.graph.TensorType"
+  },
+  "max.graph.TensorValue": {
+    "kind": "class",
+    "sig": "class max.graph.TensorValue(value)",
+    "doc": "Represents a value semantic tensor within a Graph.",
+    "url": "https://max.modular.com/api/python/generated/max.graph.TensorValue/#max.graph.TensorValue"
+  },
+  "max.graph.ops.add": {
+    "kind": "function",
+    "sig": "max.graph.ops.add(lhs, rhs)",
+    "doc": "Adds two tensors element-wise.",
+    "url": "https://max.modular.com/api/python/graph.ops/#max.graph.ops.add"
+  },
+  "max.graph.ops.matmul": {
+    "kind": "function",
+    "sig": "max.graph.ops.matmul(lhs, rhs)",
+    "doc": "Computes the matrix product of two tensors.",
+    "url": "https://max.modular.com/api/python/graph.ops/#max.graph.ops.matmul"
+  },
+  "max.graph.ops.relu": {
+    "kind": "function",
+    "sig": "max.graph.ops.relu(x)",
+    "doc": "Applies the ReLU (Rectified Linear Unit) activation element-wise.",
+    "url": "https://max.modular.com/api/python/graph.ops/#max.graph.ops.relu"
   }
 }

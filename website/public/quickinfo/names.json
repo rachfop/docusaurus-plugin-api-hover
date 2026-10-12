@@ -68,13 +68,27 @@
     "max.driver.Accelerator",
     "max.driver.Device",
     "max.driver.Device.id",
-    "max.driver.accelerator_count"
+    "max.driver.accelerator_count",
+    "max.driver.Buffer",
+    "max.dtype.DType",
+    "max.dtype.DType.float32",
+    "max.engine.InferenceSession",
+    "max.graph.DeviceRef",
+    "max.graph.DeviceRef.CPU",
+    "max.graph.Graph",
+    "max.graph.Graph.inputs",
+    "max.graph.Graph.output",
+    "max.graph.TensorType",
+    "max.graph.TensorValue",
+    "max.graph.ops.add",
+    "max.graph.ops.matmul",
+    "max.graph.ops.relu"
   ],
   "bases": {
-    "max.driver.Accelerator": [
+    "max.driver.CPU": [
       "max.driver.Device"
     ],
-    "max.driver.CPU": [
+    "max.driver.Accelerator": [
       "max.driver.Device"
     ]
   }
