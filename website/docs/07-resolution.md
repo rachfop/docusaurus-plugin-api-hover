@@ -11,9 +11,9 @@ using the snippet's bindings:
   resolves to `mypackage.mod.Thing`.
 - Unique short names: `MyClass` resolves when one indexed id ends with it
   and no other does.
-- Inferred local types: after `device = Accelerator()`, the attribute
-  `device.id` resolves to the `id` attribute, including attributes inherited
-  from documented base classes.
+- Inferred local types: after `thing = mod.Thing()`, the attribute
+  `thing.size` resolves to `mypackage.mod.Thing.size`, or to the attribute a
+  documented base class of `Thing` defines.
 
 Names the snippet binds itself stay plain. A local variable called `buffer`
 is your variable, never the `Buffer` class, even when the short name would

@@ -1,24 +1,27 @@
 # quickinfo
 
-Give your API docs the hovers an editor shows. Identifiers that reference a
-documented symbol get a dotted underline, in code blocks and in prose. Hover
-one and every other mention of the symbol on the page lights up, and a
-tooltip shows its kind, full name, signature, docstring summary, and a link
-to its reference page. Keyboard focus opens the same tooltip, and Escape
+In an editor, hovering a symbol shows its signature and documentation,
+which the language server provides through the Language Server Protocol
+(LSP). quickinfo brings that hover to your API docs. Code blocks, inline
+code, and links that reference a documented symbol get a dotted underline.
+Hover one and a tooltip shows the symbol's kind, full name, signature,
+docstring summary, and a link to its reference page, and every other mention
+of the symbol on the page lights up. Readers can scan an API without leaving
+the page they're on. Keyboard focus opens the same tooltip, and Escape
 closes it.
 
-quickinfo runs on Docusaurus, Astro and Blume, Sphinx, MkDocs, and any other
-static site.
+quickinfo works with Docusaurus, Astro and Blume, Sphinx, MkDocs, and any
+other static site generator.
 
-Resolution is snippet-aware. After `from mypackage import mod`, the name
-`mod.Thing` resolves to `mypackage.mod.Thing`. After `device = Accelerator()`,
-the attribute `device.id` resolves to the `id` attribute of the class,
-following documented base classes when the class itself doesn't define it.
+Resolution is snippet-aware. After `from max import driver`, the name
+`driver.CPU` resolves to `max.driver.CPU`. After
+`device = driver.Accelerator()`, the attribute `device.id` resolves to
+`max.driver.Device.id`: `Accelerator` doesn't define `id` itself, so
+quickinfo follows its documented base class, `Device`.
 
-Hovers read a names JSON listing the symbols, and an info
-JSON with signatures and doc summaries that the browser fetches on first
-hover. On Sphinx and MkDocs, `quickinfo build` writes both from the built
-site.
+Hovers read a names JSON listing the symbols, and an info JSON with
+signatures and doc summaries that the browser fetches on first hover. On
+Sphinx and MkDocs, `quickinfo build` writes both from the built site.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="media/hover-dark.png">
@@ -98,8 +101,8 @@ mkdocs build
 npx quickinfo build site
 ```
 
-**Any other static site.** Copy the script next to your data files with
-`npx quickinfo assets <dir>`, and add
+**Any other static site generator.** Copy the script next to your data
+files with `npx quickinfo assets <dir>`, and add
 `<script defer src="/quickinfo/quickinfo.js"></script>` to your template.
 
 ## Development

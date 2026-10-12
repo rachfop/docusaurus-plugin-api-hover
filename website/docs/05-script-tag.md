@@ -1,6 +1,6 @@
 ---
-title: Add to any static site
-description: Load quickinfo with a script tag on Hugo, Jekyll, or plain HTML docs.
+title: Add to any static site generator
+description: Load quickinfo with a script tag on Hugo, Jekyll, plain HTML, or any other static site generator.
 ---
 
 Any static site can load quickinfo with one script tag. The script fetches

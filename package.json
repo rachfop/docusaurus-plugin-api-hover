@@ -1,7 +1,7 @@
 {
   "name": "quickinfo",
   "version": "0.1.0",
-  "description": "IDE-style API hover tooltips for docs sites: signatures and docstrings on every API symbol in code blocks and prose. Docusaurus, Astro, Sphinx, MkDocs, or any static site.",
+  "description": "Editor-style API hover tooltips for docs: signatures and docstrings on every API symbol in code blocks and prose. Docusaurus, Astro, Sphinx, MkDocs, or any other static site generator.",
   "keywords": [
     "api",
     "astro",
