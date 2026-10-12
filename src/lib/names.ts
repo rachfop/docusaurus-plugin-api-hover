@@ -1,6 +1,6 @@
 /**
  * The names JSON, and the packed form the Docusaurus client bundle
- * carries. Packing groups ids by parent (`{"max.graph": ["Graph", "ops"]}`),
+ * carries. Packing groups ids by parent (`{"pathlib": ["Path", "PurePath"]}`),
  * which roughly halves the raw size of a large index: the client parses
  * less JavaScript on every page.
  */

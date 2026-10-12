@@ -64,32 +64,23 @@
     "PackedNames.tree",
     "PackedNames.bases",
     "PackedNames.version",
-    "max.driver.CPU",
-    "max.driver.Accelerator",
-    "max.driver.Device",
-    "max.driver.Device.id",
-    "max.driver.accelerator_count",
-    "max.driver.Buffer",
-    "max.dtype.DType",
-    "max.dtype.DType.float32",
-    "max.engine.InferenceSession",
-    "max.graph.DeviceRef",
-    "max.graph.DeviceRef.CPU",
-    "max.graph.Graph",
-    "max.graph.Graph.inputs",
-    "max.graph.Graph.output",
-    "max.graph.TensorType",
-    "max.graph.TensorValue",
-    "max.graph.ops.add",
-    "max.graph.ops.matmul",
-    "max.graph.ops.relu"
+    "collections.OrderedDict",
+    "json.dumps",
+    "json.loads",
+    "multiprocessing.Queue",
+    "pathlib.Path",
+    "pathlib.Path.cwd",
+    "pathlib.Path.read_text",
+    "pathlib.Path.write_text",
+    "pathlib.PurePath",
+    "pathlib.PurePath.name",
+    "queue.Queue",
+    "zipfile.ZipFile",
+    "zipfile.ZipFile.namelist"
   ],
   "bases": {
-    "max.driver.CPU": [
-      "max.driver.Device"
-    ],
-    "max.driver.Accelerator": [
-      "max.driver.Device"
+    "pathlib.Path": [
+      "pathlib.PurePath"
     ]
   }
 }

@@ -8,8 +8,9 @@
  *    signature block and a Blume TypeTable for each function's parameters
  *    and each interface's properties.
  *  - public/quickinfo/names.json and info.json: the index and tooltip
- *    data the site's own quickinfo() integration serves, plus the real MAX
- *    entries in demo/max.json for the site's live examples.
+ *    data the site's own quickinfo() integration serves, plus the real
+ *    Python standard library entries in demo/python.json for the site's
+ *    live examples.
  *
  * JSDoc read per declaration: the comment body (description; its first
  * paragraph is the tooltip text), @param, @returns, @default, @example.
@@ -403,9 +404,10 @@ function buildHoverData(sections) {
     }
   }
   const version = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8')).version;
-  // The site's live examples hover real MAX symbols; their data
-  // lives in demo/max.json, beside the generated quickinfo symbols.
-  const demo = JSON.parse(readFileSync(path.join(website, 'demo/max.json'), 'utf8'));
+  // The site's live examples hover real Python standard library
+  // symbols; their data lives in demo/python.json, beside the
+  // generated quickinfo symbols.
+  const demo = JSON.parse(readFileSync(path.join(website, 'demo/python.json'), 'utf8'));
   for (const id of demo.ids) add(id, demo.info[id]);
   return { names: { version, ids: Object.keys(info), bases: demo.bases }, info };
 }

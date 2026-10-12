@@ -13,11 +13,11 @@ closes it.
 quickinfo works with Docusaurus, Astro and Blume, Sphinx, MkDocs, and any
 other static site generator.
 
-Resolution is snippet-aware. After `from max import driver`, the name
-`driver.CPU` resolves to `max.driver.CPU`. After
-`device = driver.Accelerator()`, the attribute `device.id` resolves to
-`max.driver.Device.id`: `Accelerator` doesn't define `id` itself, so
-quickinfo follows its documented base class, `Device`.
+Resolution is snippet-aware. After `import json`, the name `json.dumps`
+resolves to `json.dumps`. After `config = Path("app.toml")` with
+`from pathlib import Path`, the attribute `config.name` resolves to
+`pathlib.PurePath.name`: `Path` doesn't define `name` itself, so quickinfo
+follows its documented base class, `PurePath`.
 
 Hovers read a names JSON listing the symbols, and an info JSON with
 signatures and doc summaries that the browser fetches on first hover. On
@@ -25,7 +25,7 @@ Sphinx and MkDocs, `quickinfo build` writes both from the built site.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="media/hover-dark.png">
-  <img src="media/hover-light.png" alt="Hovering CPU in a MAX code example on quickinfo's docs site shows a tooltip with the CLASS badge, the full name max.driver.CPU, its signature, its doc summary, and a link to its reference page.">
+  <img src="media/hover-light.png" alt="Hovering dumps in a Python code example on quickinfo's docs site shows a tooltip with the FUNCTION badge, the full name json.dumps, its signature, its doc summary, and a link to its reference page.">
 </picture>
 
 The screenshot is captured from quickinfo's own docs site, where the hovers

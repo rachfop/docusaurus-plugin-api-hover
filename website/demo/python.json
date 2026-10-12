@@ -1,0 +1,101 @@
+{
+  "source": "Real entries from the Python standard library, for the live examples on this site.",
+  "ids": [
+    "collections.OrderedDict",
+    "json.dumps",
+    "json.loads",
+    "multiprocessing.Queue",
+    "pathlib.Path",
+    "pathlib.Path.cwd",
+    "pathlib.Path.read_text",
+    "pathlib.Path.write_text",
+    "pathlib.PurePath",
+    "pathlib.PurePath.name",
+    "queue.Queue",
+    "zipfile.ZipFile",
+    "zipfile.ZipFile.namelist"
+  ],
+  "bases": {
+    "pathlib.Path": ["pathlib.PurePath"]
+  },
+  "info": {
+    "collections.OrderedDict": {
+      "kind": "class",
+      "sig": "class collections.OrderedDict()",
+      "doc": "Dict that remembers the order entries were added.",
+      "url": "https://docs.python.org/3/library/collections.html#collections.OrderedDict"
+    },
+    "json.dumps": {
+      "kind": "function",
+      "sig": "json.dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, cls=None, indent=None, separators=None, default=None, sort_keys=False, **kw)",
+      "doc": "Serialize obj to a JSON formatted string.",
+      "url": "https://docs.python.org/3/library/json.html#json.dumps"
+    },
+    "json.loads": {
+      "kind": "function",
+      "sig": "json.loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)",
+      "doc": "Deserialize s to a Python object.",
+      "url": "https://docs.python.org/3/library/json.html#json.loads"
+    },
+    "multiprocessing.Queue": {
+      "kind": "class",
+      "sig": "class multiprocessing.Queue(maxsize=0)",
+      "doc": "Returns a process shared queue implemented using a pipe and a few locks/semaphores.",
+      "url": "https://docs.python.org/3/library/multiprocessing.html#multiprocessing.Queue"
+    },
+    "pathlib.Path": {
+      "kind": "class",
+      "sig": "class pathlib.Path(*args, **kwargs)",
+      "doc": "A PurePath subclass that represents a concrete filesystem path.",
+      "url": "https://docs.python.org/3/library/pathlib.html#pathlib.Path"
+    },
+    "pathlib.Path.cwd": {
+      "kind": "class method",
+      "sig": "classmethod cwd()",
+      "doc": "Return a new path object representing the current directory.",
+      "url": "https://docs.python.org/3/library/pathlib.html#pathlib.Path.cwd"
+    },
+    "pathlib.Path.read_text": {
+      "kind": "method",
+      "sig": "read_text(encoding=None, errors=None, newline=None)",
+      "doc": "Open the file in text mode, read it, and close the file.",
+      "url": "https://docs.python.org/3/library/pathlib.html#pathlib.Path.read_text"
+    },
+    "pathlib.Path.write_text": {
+      "kind": "method",
+      "sig": "write_text(data, encoding=None, errors=None, newline=None)",
+      "doc": "Open the file in text mode, write data, and close the file.",
+      "url": "https://docs.python.org/3/library/pathlib.html#pathlib.Path.write_text"
+    },
+    "pathlib.PurePath": {
+      "kind": "class",
+      "sig": "class pathlib.PurePath(*pathsegments)",
+      "doc": "Base class for concrete paths, supplying pure computational operations.",
+      "url": "https://docs.python.org/3/library/pathlib.html#pathlib.PurePath"
+    },
+    "pathlib.PurePath.name": {
+      "kind": "property",
+      "sig": "property name: str",
+      "doc": "A string representing the final path component, excluding the drive and root.",
+      "url": "https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.name"
+    },
+    "queue.Queue": {
+      "kind": "class",
+      "sig": "class queue.Queue(maxsize=0)",
+      "doc": "Constructor for a FIFO queue. maxsize is an integer that sets the upperbound limit on the number of items that can be placed in the queue.",
+      "url": "https://docs.python.org/3/library/queue.html#queue.Queue"
+    },
+    "zipfile.ZipFile": {
+      "kind": "class",
+      "sig": "class zipfile.ZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True)",
+      "doc": "Open a ZIP file, where file can be a path to a file or a file-like object.",
+      "url": "https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile"
+    },
+    "zipfile.ZipFile.namelist": {
+      "kind": "method",
+      "sig": "namelist()",
+      "doc": "Return a list of archive members by name.",
+      "url": "https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile.namelist"
+    }
+  }
+}

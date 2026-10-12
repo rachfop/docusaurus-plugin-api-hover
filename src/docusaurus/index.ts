@@ -40,9 +40,9 @@ export interface PluginOptions {
    */
   infoUrl?: string;
   /**
-   * Id prefixes that win a short-name collision, e.g. `["max."]` on a site
-   * that indexes both MAX symbols and Python stdlib ids. Keeps secondary
-   * id sources from changing existing annotations.
+   * Id prefixes that win a short-name collision, e.g. `["mypkg."]` on a
+   * site that indexes both its own package and Python stdlib ids. Keeps
+   * secondary id sources from changing existing annotations.
    * @default []
    */
   preferPrefixes?: string[];
@@ -54,7 +54,7 @@ export interface PluginOptions {
   /**
    * Route prefixes whose code blocks stay unannotated, under the site's
    * `baseUrl`: pages for another language or another version of the API
-   * than the index describes, e.g. `['/stable/', '/api/mojo/']`. Pass the
+   * than the index describes, e.g. `['/stable/', '/api/rust/']`. Pass the
    * same pages to the rehype pass's `exclude`.
    * @default []
    */

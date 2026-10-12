@@ -53,14 +53,14 @@ from elsewhere, or to change what gets annotated, set
 blocks. With it set, every unmarked block is read as Python.
 
 Once the script runs, Python code blocks and inline code get hovers from
-your data. With MAX's data, this block resolves `InferenceSession` and
-`CPU` through its imports:
+your data. With the Python standard library's data, this block resolves
+`dumps` and `Path` through its imports:
 
 ```python
-from max.driver import CPU
-from max.engine import InferenceSession
+from json import dumps
+from pathlib import Path
 
-session = InferenceSession(devices=[CPU()])
+Path("out.json").write_text(dumps({"ok": True}))
 ```
 
 ## Colors

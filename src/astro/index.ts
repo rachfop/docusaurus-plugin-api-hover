@@ -142,8 +142,8 @@ namespace quickinfo {
      */
     infoUrl?: string;
     /**
-     * Id prefixes that win a short-name collision, e.g. `["max."]` on a site
-     * that indexes both MAX symbols and Python stdlib ids.
+     * Id prefixes that win a short-name collision, e.g. `["mypkg."]` on a
+     * site that indexes both its own package and Python stdlib ids.
      * @default []
      */
     preferPrefixes?: string[];

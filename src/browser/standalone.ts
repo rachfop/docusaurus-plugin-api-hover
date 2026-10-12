@@ -28,7 +28,7 @@ export interface ScriptAttributes {
   infoUrl?: string;
   /**
    * Comma-separated id prefixes that win a short-name collision, e.g.
-   * `max.,mypkg.`.
+   * `mypkg.,toolkit.`.
    * @default none
    */
   preferPrefixes?: string;

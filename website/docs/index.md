@@ -16,22 +16,23 @@ closes it.
 quickinfo works with Docusaurus, Astro and Blume, Sphinx, MkDocs, and any
 other static site generator.
 
-![Hovering CPU in a MAX code example shows a tooltip with the CLASS badge, the full name max.driver.CPU, its signature, its doc summary, and a link to its reference page.](/hover-light.png)
+![Hovering dumps in a Python code example shows a tooltip with the FUNCTION badge, the full name json.dumps, its signature, its doc summary, and a link to its reference page.](/hover-light.png)
 
 Resolution is snippet-aware. Hover the names in this example, which uses
-real data from the MAX Python API:
+real data from the Python standard library:
 
 ```python
-from max import driver
+import json
+from pathlib import Path
 
-device = driver.Accelerator()
-print(device.id)
-cpu = driver.CPU()
+config = Path("config.json")
+print(config.name)
+config.write_text(json.dumps({"name": "demo"}))
 ```
 
-`driver.CPU` resolves to `max.driver.CPU` through the import. `device.id`
-resolves to `max.driver.Device.id`: `device` holds an `Accelerator`, which
-inherits `id` from its documented base class, `Device`.
+`dumps` in `json.dumps(...)` resolves to `json.dumps` through the import.
+`config.name` resolves to `pathlib.PurePath.name`: `config` holds a `Path`,
+which inherits `name` from its documented base class, `PurePath`.
 
 ## Set up your site
 

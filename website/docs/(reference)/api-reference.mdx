@@ -94,7 +94,7 @@ Options for the Docusaurus plugin, passed in `docusaurus.config.js`.
   "preferPrefixes": {
     "type": "string[]",
     "default": "[]",
-    "description": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids. Keeps secondary id sources from changing existing annotations."
+    "description": "Id prefixes that win a short-name collision, e.g. [\"mypkg.\"] on a site that indexes both its own package and Python stdlib ids. Keeps secondary id sources from changing existing annotations."
   },
   "languages": {
     "type": "string[]",
@@ -104,7 +104,7 @@ Options for the Docusaurus plugin, passed in `docusaurus.config.js`.
   "exclude": {
     "type": "string[]",
     "default": "[]",
-    "description": "Route prefixes whose code blocks stay unannotated, under the site's baseUrl: pages for another language or another version of the API than the index describes, e.g. ['/stable/', '/api/mojo/']. Pass the same pages to the rehype pass's exclude."
+    "description": "Route prefixes whose code blocks stay unannotated, under the site's baseUrl: pages for another language or another version of the API than the index describes, e.g. ['/stable/', '/api/rust/']. Pass the same pages to the rehype pass's exclude."
   }
 }} />
 
@@ -175,12 +175,12 @@ Options for the rehype pass, passed in the markdown config.
   "preferPrefixes": {
     "type": "string[]",
     "default": "[]",
-    "description": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids."
+    "description": "Id prefixes that win a short-name collision, e.g. [\"mypkg.\"] on a site that indexes both its own package and Python stdlib ids."
   },
   "exclude": {
     "type": "Array<string | RegExp>",
     "default": "[]",
-    "description": "Pages to leave unannotated: a string matches when the page's source path contains it, a RegExp when it matches the path. Use it for reference pages of another language or another version of the API than the index describes, e.g. ['/api/mojo/', 'versioned_docs/']."
+    "description": "Pages to leave unannotated: a string matches when the page's source path contains it, a RegExp when it matches the path. Use it for reference pages of another language or another version of the API than the index describes, e.g. ['/api/rust/', 'versioned_docs/']."
   }
 }} />
 
@@ -235,7 +235,7 @@ Options for the Astro integration, passed to `quickinfo()`.
   "preferPrefixes": {
     "type": "string[]",
     "default": "[]",
-    "description": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids."
+    "description": "Id prefixes that win a short-name collision, e.g. [\"mypkg.\"] on a site that indexes both its own package and Python stdlib ids."
   },
   "languages": {
     "type": "string[]",
@@ -266,7 +266,7 @@ Options for the standalone script, set as data attributes on its `<script>` tag 
   "preferPrefixes": {
     "type": "string",
     "default": "none",
-    "description": "Comma-separated id prefixes that win a short-name collision, e.g. max.,mypkg.."
+    "description": "Comma-separated id prefixes that win a short-name collision, e.g. mypkg.,toolkit.."
   },
   "languages": {
     "type": "string",
@@ -450,7 +450,7 @@ Returns `string | undefined`: The symbol id, or `undefined` when the name is unk
 
 ### resolveMember
 
-Find a member's defining id on a class, walking the documented base classes when the class doesn't define the member itself: `id` accessed on an Accelerator resolves to `max.driver.Device.id`. Memoized with a pre-set undefined result as the cycle guard.
+Find a member's defining id on a class, walking the documented base classes when the class doesn't define the member itself: `name` accessed on a `Path` resolves to `pathlib.PurePath.name`. Memoized with a pre-set undefined result as the cycle guard.
 
 ```ts
 resolveMember(index: SymbolIndex, classId: string, member: string): string | undefined
@@ -505,7 +505,7 @@ Returns `string | undefined`: The symbol id, or `undefined` when the mention is 
 
 ### resolveHref
 
-Extract a symbol id from a link to an API page on the same site. A fragment naming a symbol wins (`graph.html#max.graph.Graph`, the shape Sphinx and mkdocstrings emit); otherwise the page path's last segment names it when it reads as a symbol page: a dotted id (`max.graph.Graph/`) or a Markdown file (`Graph.md`). A plain path segment (`/quickinfo/`, a site's own base path) is a page, not a symbol. Links with a scheme or host (`https://docs.python.org/...#int`) point at another site's symbols and never resolve, and only ids in the index count.
+Extract a symbol id from a link to an API page on the same site. A fragment naming a symbol wins (`pathlib.html#pathlib.Path`, the shape Sphinx and mkdocstrings emit); otherwise the page path's last segment names it when it reads as a symbol page: a dotted id (`pathlib.Path/`) or a Markdown file (`Path.md`). A plain path segment (`/quickinfo/`, a site's own base path) is a page, not a symbol. Links with a scheme or host (`https://docs.python.org/...#int`) point at another site's symbols and never resolve, and only ids in the index count.
 
 ```ts
 resolveHref(href: string, index: SymbolIndex): string | undefined
@@ -530,7 +530,7 @@ Returns `string | undefined`: The symbol id, or `undefined` for any other link.
 
 ### resolveDotted
 
-Resolve a dotted occurrence for annotation. Import aliases resolve as in resolveApiName; inferred local variables resolve member access through the inheritance chain, so `device.id` annotates as `max.driver.Device.id` once `device = driver.Accelerator()` is seen. Any other name bound in the snippet stays cold: it's the user's variable, not an API mention, even when it matches a unique short name.
+Resolve a dotted occurrence for annotation. Import aliases resolve as in resolveApiName; inferred local variables resolve member access through the inheritance chain, so `config.name` annotates as `pathlib.PurePath.name` once `config = Path("app.toml")` is seen. Any other name bound in the snippet stays cold: it's the user's variable, not an API mention, even when it matches a unique short name.
 
 ```ts
 resolveDotted(name: string, aliases: Record<string, string>, locals: Record<string, string>, binds: Set<string>, index: SymbolIndex): string | undefined
@@ -542,7 +542,7 @@ resolveDotted(name: string, aliases: Record<string, string>, locals: Record<stri
   "name": {
     "type": "string",
     "required": true,
-    "description": "The dotted occurrence as written, e.g. device.id."
+    "description": "The dotted occurrence as written, e.g. config.name."
   },
   "aliases": {
     "type": "Record<string, string>",
@@ -570,7 +570,7 @@ Returns `string | undefined`: The symbol id, or `undefined` when the occurrence 
 
 ### annotateLines
 
-Annotate one prism-rendered line of tokens: each identifier piece gets `apiId` when it resolves against the index, so `CPU` in `driver.CPU()` resolves to `max.driver.CPU` once `from max import driver` is seen, and `id` in `device.id` resolves to the inherited `max.driver.Device.id` once `device = driver.Accelerator()` is. Returns a new array; never mutates the input.
+Annotate one prism-rendered line of tokens: each identifier piece gets `apiId` when it resolves against the index, so `dumps` in `json.dumps()` resolves to `json.dumps` once `import json` is seen, and `name` in `config.name` resolves to the inherited `pathlib.PurePath.name` once `config = Path("app.toml")` is. Returns a new array; never mutates the input.
 
 ```ts
 annotateLines(line: PrismToken[], code: string, language: string | undefined, index: SymbolIndex, languages?: string[]): PrismToken[]
@@ -686,7 +686,7 @@ The resolution index built from the names JSON. Every resolver takes one; build 
   "idSet": {
     "type": "Set<string>",
     "required": true,
-    "description": "Full dotted ids, e.g. \"max.graph.Graph\"."
+    "description": "Full dotted ids, e.g. \"pathlib.Path\"."
   },
   "shortMap": {
     "type": "Map<string, string[]>",
@@ -715,7 +715,7 @@ The resolution index built from the names JSON. Every resolver takes one; build 
   "preferPrefixes": {
     "type": "string[]",
     "required": true,
-    "description": "Id prefixes that win a short-name collision (e.g. \"max.\" for a MAX docs site that also indexes Python stdlib ids), so extra id sources can never change an existing annotation."
+    "description": "Id prefixes that win a short-name collision (e.g. \"mypkg.\" for a site that indexes its own package and Python stdlib ids), so extra id sources can never change an existing annotation."
   }
 }} />
 

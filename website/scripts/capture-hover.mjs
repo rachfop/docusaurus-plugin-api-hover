@@ -12,7 +12,7 @@
  * Usage:
  *   node scripts/capture-hover.mjs \
  *     --url http://localhost:4173/quickinfo/ \
- *     --symbol max.driver.CPU \
+ *     --symbol json.dumps \
  *     --light ../media/hover-light.png,public/hover-light.png \
  *     --dark  ../media/hover-dark.png,public/hover-dark.png
  *
@@ -29,7 +29,7 @@ function arg(name, fallback) {
 }
 
 const url = arg('url', 'http://localhost:4173/quickinfo/');
-const symbol = arg('symbol', 'max.driver.CPU');
+const symbol = arg('symbol', 'json.dumps');
 const lightOuts = (arg('light', '../media/hover-light.png,public/hover-light.png') || '')
   .split(',')
   .filter(Boolean);

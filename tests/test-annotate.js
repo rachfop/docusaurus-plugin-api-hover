@@ -32,21 +32,20 @@ function check(name, fn) {
 }
 
 const IDS = [
-  'max.driver.CPU',
-  'max.driver.Accelerator',
-  'max.driver.Device.id',
-  'max.driver.Device',
-  'max.driver.Buffer',
-  'max.graph.Graph',
-  'max.graph.Graph.inputs',
-  'max.graph.Graph.output',
-  'max.graph.ops.relu',
-  'max.nn.kernels.TensorValue',
-  'max.nn.kernels.AlgebraicDim',
+  'pathlib.Path',
+  'pathlib.Path.cwd',
+  'pathlib.PurePath',
+  'pathlib.PurePath.name',
+  'json.dumps',
+  'json.loads',
+  'collections.OrderedDict',
   'collections.abc.Sequence',
+  'unittest.mock.MagicMock',
+  'unittest.mock.patch',
+  'unittest.mock.MagicMock.assert_called_once_with',
 ];
-const BASES = { 'max.driver.Accelerator': ['max.driver.Device'] };
-const PREFER = ['max.'];
+const BASES = { 'pathlib.Path': ['pathlib.PurePath'] };
+const PREFER = ['mypkg.'];
 
 function makeIndex() {
   return buildIndex(IDS, BASES, PREFER);
@@ -55,28 +54,26 @@ function makeIndex() {
 // --- resolveApiName -------------------------------------------------------
 
 check('exact id resolves to itself', () => {
-  assert.strictEqual(resolveApiName('max.graph.Graph', {}, makeIndex()), 'max.graph.Graph');
+  assert.strictEqual(resolveApiName('pathlib.Path', {}, makeIndex()), 'pathlib.Path');
 });
 
 check('import alias resolves bare name', () => {
-  assert.strictEqual(
-    resolveApiName('CPU', { driver: 'max.driver' }, makeIndex()),
-    'max.driver.CPU',
-  );
+  assert.strictEqual(resolveApiName('dumps', { j: 'json' }, makeIndex()), 'json.dumps');
 });
 
 check('alias resolves dotted member chain', () => {
   assert.strictEqual(
-    resolveApiName('graph.Graph.inputs', { graph: 'max.graph' }, makeIndex()),
-    'max.graph.Graph.inputs',
+    resolveApiName(
+      'mock.MagicMock.assert_called_once_with',
+      { mock: 'unittest.mock' },
+      makeIndex(),
+    ),
+    'unittest.mock.MagicMock.assert_called_once_with',
   );
 });
 
 check('globally unique short name resolves', () => {
-  assert.strictEqual(
-    resolveApiName('AlgebraicDim', {}, makeIndex()),
-    'max.nn.kernels.AlgebraicDim',
-  );
+  assert.strictEqual(resolveApiName('OrderedDict', {}, makeIndex()), 'collections.OrderedDict');
 });
 
 check('ambiguous short name stays cold', () => {
@@ -88,9 +85,9 @@ check('ambiguous short name stays cold', () => {
 });
 
 check('preferPrefixes breaks short-name collisions', () => {
-  const ids = ['max.driver.Buffer', 'collections.abc.Buffer'];
-  const index = buildIndex(ids, {}, ['max.']);
-  assert.strictEqual(resolveApiName('Buffer', {}, index), 'max.driver.Buffer');
+  const ids = ['queue.Queue', 'multiprocessing.Queue'];
+  const index = buildIndex(ids, {}, ['queue.']);
+  assert.strictEqual(resolveApiName('Queue', {}, index), 'queue.Queue');
 });
 
 check('unresolvable name stays cold', () => {
@@ -101,28 +98,28 @@ check('unresolvable name stays cold', () => {
 
 check('inherited member resolves through bases', () => {
   const index = makeIndex();
-  assert.strictEqual(resolveMember(index, 'max.driver.Accelerator', 'id'), 'max.driver.Device.id');
+  assert.strictEqual(resolveMember(index, 'pathlib.Path', 'name'), 'pathlib.PurePath.name');
 });
 
 check('own member wins over inherited', () => {
   const index = buildIndex(
     [
-      'max.driver.Accelerator.id',
-      'max.driver.Accelerator',
-      'max.driver.Device.id',
-      'max.driver.Device',
+      'unittest.mock.MagicMock.assert_called_once_with',
+      'unittest.mock.MagicMock',
+      'unittest.mock.NonCallableMock.assert_called_once_with',
+      'unittest.mock.NonCallableMock',
     ],
-    { 'max.driver.Accelerator': ['max.driver.Device'] },
+    { 'unittest.mock.MagicMock': ['unittest.mock.NonCallableMock'] },
     [],
   );
   assert.strictEqual(
-    resolveMember(index, 'max.driver.Accelerator', 'id'),
-    'max.driver.Accelerator.id',
+    resolveMember(index, 'unittest.mock.MagicMock', 'assert_called_once_with'),
+    'unittest.mock.MagicMock.assert_called_once_with',
   );
 });
 
 check('undocumented member stays cold', () => {
-  assert.strictEqual(resolveMember(makeIndex(), 'max.driver.Accelerator', 'nope'), undefined);
+  assert.strictEqual(resolveMember(makeIndex(), 'pathlib.Path', 'nope'), undefined);
 });
 
 // --- language gating --------------------------------------------------------
@@ -134,7 +131,7 @@ check('python language variants are annotated', () => {
 });
 
 check('non-python languages are skipped', () => {
-  assert.strictEqual(isAnnotatedLanguage('mojo'), false);
+  assert.strictEqual(isAnnotatedLanguage('rust'), false);
   assert.strictEqual(isAnnotatedLanguage('bash'), false);
   assert.strictEqual(isAnnotatedLanguage(undefined), false);
 });
@@ -157,49 +154,49 @@ function apiIds(tokens) {
 }
 
 check('bare token in plain text gets split and annotated', () => {
-  const code = 'from max import driver\n';
-  const out = annotate(code, flatLine('CPU'));
-  assert.deepStrictEqual(apiIds(out), ['CPU:max.driver.CPU']);
+  const code = 'import json\n';
+  const out = annotate(code, flatLine('dumps'));
+  assert.deepStrictEqual(apiIds(out), ['dumps:json.dumps']);
 });
 
 check('dotted chain annotates each resolvable segment', () => {
-  const code = 'from max import graph\n';
-  const out = annotate(code, flatLine('graph.Graph'));
-  // The alias segment itself stays cold (`max.graph` is not an indexed
+  const code = 'from unittest import mock\n';
+  const out = annotate(code, flatLine('mock.MagicMock'));
+  // The alias segment itself stays cold (`unittest.mock` is not an indexed
   // symbol); the class segment resolves through the alias.
-  assert.deepStrictEqual(apiIds(out), ['Graph:max.graph.Graph']);
+  assert.deepStrictEqual(apiIds(out), ['MagicMock:unittest.mock.MagicMock']);
 });
 
 check('undotted identifier inside operators is annotated', () => {
-  const code = 'from max import driver\ndriver.CPU()\n';
-  const out = annotate(code, flatLine('driver.CPU()'));
-  // `driver` alone is not an id (module pages lack anchors in this
-  // fixture), but CPU resolves through the alias.
-  assert.deepStrictEqual(apiIds(out), ['CPU:max.driver.CPU']);
+  const code = 'import json as j\nj.dumps({"ok": True})\n';
+  const out = annotate(code, flatLine('j.dumps({"ok": True})'));
+  // `j` alone is not an id (modules aren't indexed in this
+  // fixture), but dumps resolves through the alias.
+  assert.deepStrictEqual(apiIds(out), ['dumps:json.dumps']);
 });
 
 check('with-as binds annotate the bound name', () => {
-  const code = 'from max.graph import ops as relu_ops\n';
-  const out = annotate(code, flatLine('relu_ops.relu'));
-  assert.deepStrictEqual(apiIds(out), ['relu:max.graph.ops.relu']);
+  const code = 'from unittest import mock as mk\n';
+  const out = annotate(code, flatLine('mk.MagicMock'));
+  assert.deepStrictEqual(apiIds(out), ['MagicMock:unittest.mock.MagicMock']);
 });
 
 check('inferred local type annotates attribute access', () => {
-  const code = 'from max import driver\ndev = driver.Accelerator()\n';
-  const out = annotate(code, flatLine('dev.id'));
+  const code = 'from pathlib import Path\nconfig = Path("app.toml")\n';
+  const out = annotate(code, flatLine('config.name'));
   // The local variable itself stays cold; the attribute resolves to the
   // member inherited from the documented base class.
-  assert.deepStrictEqual(apiIds(out), ['id:max.driver.Device.id']);
+  assert.deepStrictEqual(apiIds(out), ['name:pathlib.PurePath.name']);
 });
 
 check('non-python lines pass through untouched', () => {
-  const line = [{ types: 'plain', content: 'CPU' }];
-  assert.strictEqual(annotateLines(line, 'x', 'mojo', index), line);
+  const line = [{ types: 'plain', content: 'dumps' }];
+  assert.strictEqual(annotateLines(line, 'x', 'rust', index), line);
 });
 
 check('input line is never mutated', () => {
-  const line = flatLine('CPU');
-  annotate('from max import driver\n', line);
+  const line = flatLine('dumps');
+  annotate('import json\n', line);
   assert.strictEqual(line[0].apiId, undefined);
   assert.strictEqual(line.length, 1);
 });
@@ -208,43 +205,43 @@ check('input line is never mutated', () => {
 
 const { parsePythonImports, parsePythonLocals, parsePythonBinds } = require('../lib/lib/python');
 
-const resolveGraph = (name) => (name === 'Graph' ? 'max.graph.Graph' : undefined);
+const resolvePath = (name) => (name === 'Path' ? 'pathlib.Path' : undefined);
 
 check('parenthesized imports on one line resolve', () => {
-  assert.deepStrictEqual(parsePythonImports('from max.graph import (Graph, ops)'), {
-    Graph: 'max.graph.Graph',
-    ops: 'max.graph.ops',
+  assert.deepStrictEqual(parsePythonImports('from unittest.mock import (MagicMock, patch)'), {
+    MagicMock: 'unittest.mock.MagicMock',
+    patch: 'unittest.mock.patch',
   });
 });
 
 check('parenthesized imports across lines resolve', () => {
-  const code = 'from max.graph import (\n    Graph,  # the builder\n    ops as o,\n)';
+  const code = 'from unittest.mock import (\n    MagicMock,  # the double\n    patch as p,\n)';
   assert.deepStrictEqual(parsePythonImports(code), {
-    Graph: 'max.graph.Graph',
-    o: 'max.graph.ops',
+    MagicMock: 'unittest.mock.MagicMock',
+    p: 'unittest.mock.patch',
   });
 });
 
 check('brackets inside strings and comments leave line joining alone', () => {
-  const code = 'print("(")  # )(\nfrom max.graph import Graph';
-  assert.deepStrictEqual(parsePythonImports(code), { Graph: 'max.graph.Graph' });
+  const code = 'print("(")  # )(\nfrom pathlib import Path';
+  assert.deepStrictEqual(parsePythonImports(code), { Path: 'pathlib.Path' });
 });
 
 check('imports inside a docstring are ignored', () => {
-  assert.deepStrictEqual(parsePythonImports('"""\nfrom max.graph import Graph\n"""'), {});
+  assert.deepStrictEqual(parsePythonImports('"""\nfrom pathlib import Path\n"""'), {});
 });
 
 check('typed assignment and multi-line with infer local types', () => {
-  const code = 'g: Graph = Graph("a")\nwith Graph(\n    "b",\n) as graph:\n    pass';
+  const code = 'p: Path = Path("a")\nwith Path(\n    "b",\n) as cfg:\n    pass';
   assert.deepStrictEqual(
-    parsePythonLocals(code, { Graph: 'max.graph.Graph' }, resolveGraph, new Set()),
-    { g: 'max.graph.Graph', graph: 'max.graph.Graph' },
+    parsePythonLocals(code, { Path: 'pathlib.Path' }, resolvePath, new Set()),
+    { p: 'pathlib.Path', cfg: 'pathlib.Path' },
   );
 });
 
 check('multi-line and async defs bind their parameters', () => {
-  const code = 'async def run(\n    graph,\n    *args,\n    x: int = 1,\n):\n    pass';
-  assert.deepStrictEqual([...parsePythonBinds(code)].sort(), ['args', 'graph', 'x']);
+  const code = 'async def run(\n    cfg,\n    *args,\n    x: int = 1,\n):\n    pass';
+  assert.deepStrictEqual([...parsePythonBinds(code)].sort(), ['args', 'cfg', 'x']);
 });
 
 check('keyword arguments in a multi-line call are not binds', () => {
@@ -292,15 +289,15 @@ function plainText(node) {
 check('rehype annotates inline code mentions of indexed symbols', () => {
   const dataFile = tempDataFile({ ids: IDS });
   const transform = rehype({ dataFile, preferPrefixes: PREFER });
-  const tree = el('root', [el('p', [el('code', [text('AlgebraicDim')])])]);
+  const tree = el('root', [el('p', [el('code', [text('OrderedDict')])])]);
   transform(tree);
-  assert.deepStrictEqual(collectApiIds(tree), ['AlgebraicDim=>max.nn.kernels.AlgebraicDim']);
+  assert.deepStrictEqual(collectApiIds(tree), ['OrderedDict=>collections.OrderedDict']);
 });
 
 check('rehype skips code inside pre blocks', () => {
   const dataFile = tempDataFile({ ids: IDS });
   const transform = rehype({ dataFile, preferPrefixes: PREFER });
-  const tree = el('root', [el('pre', [el('code', [text('CPU')])])]);
+  const tree = el('root', [el('pre', [el('code', [text('OrderedDict')])])]);
   transform(tree);
   assert.deepStrictEqual(collectApiIds(tree), []);
 });
@@ -310,21 +307,21 @@ check('rehype link href is authoritative for the id', () => {
   const transform = rehype({ dataFile, preferPrefixes: PREFER });
   const tree = el('root', [
     el('p', [
-      el('a', [el('code', [text('Buffer')])], {
-        href: '/api/python/generated/max.driver.Buffer.md',
+      el('a', [el('code', [text('Path')])], {
+        href: '/api/generated/pathlib.Path.md',
       }),
     ]),
   ]);
   transform(tree);
-  assert.deepStrictEqual(collectApiIds(tree), ['Buffer=>max.driver.Buffer']);
+  assert.deepStrictEqual(collectApiIds(tree), ['Path=>pathlib.Path']);
 });
 
 check('rehype stays cold on ambiguous prose mention', () => {
   const dataFile = tempDataFile({
-    ids: ['max.driver.Buffer', 'collections.abc.Buffer'],
+    ids: ['queue.Queue', 'multiprocessing.Queue'],
   });
   const transform = rehype({ dataFile });
-  const tree = el('root', [el('p', [el('code', [text('Buffer')])])]);
+  const tree = el('root', [el('p', [el('code', [text('Queue')])])]);
   transform(tree);
   assert.deepStrictEqual(collectApiIds(tree), []);
 });
@@ -332,14 +329,14 @@ check('rehype stays cold on ambiguous prose mention', () => {
 check('rehype resolves a unique dotted suffix', () => {
   const dataFile = tempDataFile({ ids: IDS });
   const transform = rehype({ dataFile });
-  const tree = el('root', [el('p', [el('code', [text('ops.relu()')])])]);
+  const tree = el('root', [el('p', [el('code', [text('mock.patch()')])])]);
   transform(tree);
-  assert.deepStrictEqual(collectApiIds(tree), ['ops.relu()=>max.graph.ops.relu']);
+  assert.deepStrictEqual(collectApiIds(tree), ['mock.patch()=>unittest.mock.patch']);
 });
 
 check('rehype with missing data file annotates nothing', () => {
   const transform = rehype({ dataFile: '/nonexistent/nope.json' });
-  const tree = el('root', [el('p', [el('code', [text('AlgebraicDim')])])]);
+  const tree = el('root', [el('p', [el('code', [text('OrderedDict')])])]);
   transform(tree);
   assert.deepStrictEqual(collectApiIds(tree), []);
 });
@@ -361,34 +358,35 @@ check('malformed escapes in hrefs never throw', () => {
 });
 
 check('links to other hosts never resolve, even when the fragment is an id', () => {
-  const index = buildIndex(['int', 'max.graph.Graph'], {}, []);
-  assert.strictEqual(resolveHref('https://mojolang.org/docs/std/simd/#int', index), undefined);
-  assert.strictEqual(resolveHref('//cdn.example/x#max.graph.Graph', index), undefined);
-  assert.strictEqual(resolveHref('/api/x#max.graph.Graph', index), 'max.graph.Graph');
+  const index = buildIndex(['int', 'pathlib.Path'], {}, []);
+  assert.strictEqual(
+    resolveHref('https://docs.python.org/3/library/stdtypes.html#int', index),
+    undefined,
+  );
+  assert.strictEqual(resolveHref('//cdn.example/x#pathlib.Path', index), undefined);
+  assert.strictEqual(resolveHref('/api/x#pathlib.Path', index), 'pathlib.Path');
 });
 
 check('preferPrefixes beats a bare id that is itself indexed', () => {
-  const index = buildIndex(
-    ['type', 'max.pipelines.Config.type', 'bool', 'max.dtype.DType.bool'],
-    {},
-    ['max.'],
-  );
-  assert.strictEqual(resolveProseMention('bool', index), 'max.dtype.DType.bool');
-  assert.strictEqual(resolveApiName('type', {}, index), 'max.pipelines.Config.type');
+  const index = buildIndex(['type', 'mypkg.Config.type', 'bool', 'mypkg.DType.bool'], {}, [
+    'mypkg.',
+  ]);
+  assert.strictEqual(resolveProseMention('bool', index), 'mypkg.DType.bool');
+  assert.strictEqual(resolveApiName('type', {}, index), 'mypkg.Config.type');
   // Without a preferred id, the bare one still resolves.
-  assert.strictEqual(resolveProseMention('bool', buildIndex(['bool'], {}, ['max.'])), 'bool');
+  assert.strictEqual(resolveProseMention('bool', buildIndex(['bool'], {}, ['mypkg.'])), 'bool');
 });
 
 check('untyped languages skip names inside strings and comments', () => {
-  const code = '>>> from max import driver\n>>> driver.CPU()  # driver.CPU here\n';
-  const line = [{ types: 'plain', content: '>>> driver.CPU()  # CPU and "CPU" here' }];
+  const code = '>>> import json as j\n>>> j.dumps({})  # j.dumps here\n';
+  const line = [{ types: 'plain', content: '>>> j.dumps({})  # dumps and "dumps" here' }];
   const out = annotateLines(line, code, 'pycon', makeIndex(), ['python']);
-  assert.deepStrictEqual(apiIds(out), ['CPU:max.driver.CPU']);
+  assert.deepStrictEqual(apiIds(out), ['dumps:json.dumps']);
 });
 
 check('an unclosed bracket ends at the next column-0 statement', () => {
-  const code = 'run(\n    a,\nfrom max.graph import Graph\ng = Graph("x")';
-  assert.deepStrictEqual(parsePythonImports(code), { Graph: 'max.graph.Graph' });
+  const code = 'run(\n    a,\nfrom pathlib import Path\ncfg = Path("x")';
+  assert.deepStrictEqual(parsePythonImports(code), { Path: 'pathlib.Path' });
 });
 
 check('rehype leaves inline code in links to other sites unresolved', () => {
@@ -396,8 +394,8 @@ check('rehype leaves inline code in links to other sites unresolved', () => {
   const transform = rehype({ dataFile });
   const tree = el('root', [
     el('p', [
-      el('a', [el('code', [text('AlgebraicDim')])], {
-        href: 'https://mojolang.org/docs/layout/#algebraicdim',
+      el('a', [el('code', [text('OrderedDict')])], {
+        href: 'https://example.com/py/#ordereddict',
       }),
     ]),
   ]);
@@ -410,28 +408,28 @@ check('rehype resolves inline code in same-site links by name', () => {
   const transform = rehype({ dataFile });
   // A heading anchor on the reference page names no symbol id.
   const tree = el('root', [
-    el('p', [el('a', [el('code', [text('AlgebraicDim')])], { href: '/api-reference#options' })]),
+    el('p', [el('a', [el('code', [text('OrderedDict')])], { href: '/api-reference#options' })]),
   ]);
   transform(tree);
-  assert.deepStrictEqual(collectApiIds(tree), ['AlgebraicDim=>max.nn.kernels.AlgebraicDim']);
+  assert.deepStrictEqual(collectApiIds(tree), ['OrderedDict=>collections.OrderedDict']);
 });
 
 check('a plain path segment is a page, not a symbol', () => {
-  const index = buildIndex(['quickinfo', 'max.graph.Graph'], {}, []);
+  const index = buildIndex(['quickinfo', 'pathlib.Path'], {}, []);
   assert.strictEqual(resolveHref('/quickinfo/', index), undefined);
-  assert.strictEqual(resolveHref('/api/max.graph.Graph/', index), 'max.graph.Graph');
+  assert.strictEqual(resolveHref('/api/pathlib.Path/', index), 'pathlib.Path');
   assert.strictEqual(resolveHref('quickinfo.md', index), 'quickinfo');
 });
 
 check('rehype skips excluded pages', () => {
   const dataFile = tempDataFile({ ids: IDS });
-  const transform = rehype({ dataFile, exclude: ['/api/mojo/'] });
-  const mojo = el('root', [el('p', [el('code', [text('AlgebraicDim')])])]);
-  transform(mojo, { path: '/site/docs/api/mojo/layout.md' });
-  assert.deepStrictEqual(collectApiIds(mojo), []);
-  const python = el('root', [el('p', [el('code', [text('AlgebraicDim')])])]);
-  transform(python, { path: '/site/docs/develop/graph.md' });
-  assert.deepStrictEqual(collectApiIds(python), ['AlgebraicDim=>max.nn.kernels.AlgebraicDim']);
+  const transform = rehype({ dataFile, exclude: ['/api/rust/'] });
+  const rust = el('root', [el('p', [el('code', [text('OrderedDict')])])]);
+  transform(rust, { path: '/site/docs/api/rust/guide.md' });
+  assert.deepStrictEqual(collectApiIds(rust), []);
+  const python = el('root', [el('p', [el('code', [text('OrderedDict')])])]);
+  transform(python, { path: '/site/docs/develop/guide.md' });
+  assert.deepStrictEqual(collectApiIds(python), ['OrderedDict=>collections.OrderedDict']);
 });
 
 check('rehype resolves a relative dataFile against the site directory', () => {
@@ -444,10 +442,10 @@ check('rehype resolves a relative dataFile against the site directory', () => {
   );
   fs.mkdirSync(path.join(siteDir, 'docs'));
   const transform = rehype();
-  const tree = el('root', [el('p', [el('code', [text('AlgebraicDim')])])]);
+  const tree = el('root', [el('p', [el('code', [text('OrderedDict')])])]);
   // process.cwd() is the repo, not the site.
   transform(tree, { path: path.join(siteDir, 'docs', 'page.md') });
-  assert.deepStrictEqual(collectApiIds(tree), ['AlgebraicDim=>max.nn.kernels.AlgebraicDim']);
+  assert.deepStrictEqual(collectApiIds(tree), ['OrderedDict=>collections.OrderedDict']);
 });
 
 // --- docusaurus plugin ------------------------------------------------------
@@ -535,14 +533,14 @@ check('withBase resolves root-relative URLs under the base path', () => {
 
 check('resolveHref reads Sphinx, mkdocstrings, and doc-path links', () => {
   const index = makeIndex();
-  assert.strictEqual(resolveHref('reference/graph.html#max.graph.Graph', index), 'max.graph.Graph');
-  assert.strictEqual(resolveHref('../reference/driver/#max.driver.CPU', index), 'max.driver.CPU');
+  assert.strictEqual(resolveHref('reference/pathlib.html#pathlib.Path', index), 'pathlib.Path');
   assert.strictEqual(
-    resolveHref('/api/python/generated/max.driver.Buffer.md', index),
-    'max.driver.Buffer',
+    resolveHref('../reference/mock/#unittest.mock.MagicMock', index),
+    'unittest.mock.MagicMock',
   );
-  assert.strictEqual(resolveHref('max.graph.ops.relu.md', index), 'max.graph.ops.relu');
-  assert.strictEqual(resolveHref('#module-max.graph', index), undefined);
+  assert.strictEqual(resolveHref('/api/generated/json.dumps.md', index), 'json.dumps');
+  assert.strictEqual(resolveHref('collections.OrderedDict.md', index), 'collections.OrderedDict');
+  assert.strictEqual(resolveHref('#module-json', index), undefined);
   assert.strictEqual(resolveHref('https://example.com/guide', index), undefined);
 });
 
@@ -554,8 +552,8 @@ check('prose dotted suffix resolves when unique and stays cold when shared', () 
 });
 
 check('doctest prompts parse like plain source', () => {
-  const code = '>>> from max.graph import (\n...     Graph,\n... )\n>>> g = Graph("x")';
-  assert.deepStrictEqual(parsePythonImports(code), { Graph: 'max.graph.Graph' });
+  const code = '>>> from pathlib import (\n...     Path,\n... )\n>>> cfg = Path("x")';
+  assert.deepStrictEqual(parsePythonImports(code), { Path: 'pathlib.Path' });
   assert.ok(isAnnotatedLanguage('pycon'));
 });
 

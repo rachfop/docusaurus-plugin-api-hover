@@ -28,7 +28,7 @@ import {
 export interface SymbolIndex {
   /** All ids, in index order; the prose resolver scans them for suffixes. */
   ids: string[];
-  /** Full dotted ids, e.g. "max.graph.Graph". */
+  /** Full dotted ids, e.g. "pathlib.Path". */
   idSet: Set<string>;
   /** Final segment -> ids ending with it. */
   shortMap: Map<string, string[]>;
@@ -45,9 +45,9 @@ export interface SymbolIndex {
   /** Memo for inherited-member lookups. */
   memberMemo: Map<string, string | undefined>;
   /**
-   * Id prefixes that win a short-name collision (e.g. "max." for a MAX
-   * docs site that also indexes Python stdlib ids), so extra id sources
-   * can never change an existing annotation.
+   * Id prefixes that win a short-name collision (e.g. "mypkg." for a site
+   * that indexes its own package and Python stdlib ids), so extra id
+   * sources can never change an existing annotation.
    */
   preferPrefixes: string[];
 }
@@ -86,7 +86,7 @@ export function buildIndex(
     if (bucket) bucket.push(id);
     else shortMap.set(last, [id]);
 
-    // Own member: "max.driver.Device.id" under parent "max.driver.Device",
+    // Own member: "pathlib.PurePath.name" under parent "pathlib.PurePath",
     // only when the parent is itself documented.
     const dot = id.lastIndexOf('.');
     if (dot > 0) {
@@ -115,8 +115,8 @@ export function buildIndex(
 
 /**
  * Find a member's defining id on a class, walking the documented base
- * classes when the class doesn't define the member itself: `id` accessed
- * on an Accelerator resolves to `max.driver.Device.id`. Memoized with a
+ * classes when the class doesn't define the member itself: `name` accessed
+ * on a `Path` resolves to `pathlib.PurePath.name`. Memoized with a
  * pre-set undefined result as the cycle guard.
  *
  * @param index The resolution index.
@@ -243,10 +243,10 @@ export function safeDecode(text: string): string {
 
 /**
  * Extract a symbol id from a link to an API page on the same site. A
- * fragment naming a symbol wins (`graph.html#max.graph.Graph`, the shape
+ * fragment naming a symbol wins (`pathlib.html#pathlib.Path`, the shape
  * Sphinx and mkdocstrings emit); otherwise the page path's last segment
- * names it when it reads as a symbol page: a dotted id (`max.graph.Graph/`)
- * or a Markdown file (`Graph.md`). A plain path segment (`/quickinfo/`, a
+ * names it when it reads as a symbol page: a dotted id (`pathlib.Path/`)
+ * or a Markdown file (`Path.md`). A plain path segment (`/quickinfo/`, a
  * site's own base path) is a page, not a symbol. Links with a scheme or
  * host (`https://docs.python.org/...#int`) point at another site's symbols
  * and never resolve, and only ids in the index count.
@@ -275,12 +275,12 @@ export function isExternalHref(href: string): boolean {
 /**
  * Resolve a dotted occurrence for annotation. Import aliases resolve as in
  * resolveApiName; inferred local variables resolve member access through
- * the inheritance chain, so `device.id` annotates as `max.driver.Device.id`
- * once `device = driver.Accelerator()` is seen. Any other name bound in
- * the snippet stays cold: it's the user's variable, not an API mention,
- * even when it matches a unique short name.
+ * the inheritance chain, so `config.name` annotates as
+ * `pathlib.PurePath.name` once `config = Path("app.toml")` is seen. Any
+ * other name bound in the snippet stays cold: it's the user's variable,
+ * not an API mention, even when it matches a unique short name.
  *
- * @param name The dotted occurrence as written, e.g. `device.id`.
+ * @param name The dotted occurrence as written, e.g. `config.name`.
  * @param aliases Local name to dotted path, from the snippet's imports.
  * @param locals Local name to class id, inferred from constructor calls.
  * @param binds Every name the snippet binds.
@@ -297,7 +297,7 @@ export function resolveDotted(
   const parts = name.split('.');
   const head = parts[0]!;
   // Aliases keep their API meaning even if the name is also bound in the
-  // snippet (`import max.driver as driver` then `driver.CPU()`).
+  // snippet (`import json as j` then `j.dumps()`).
   if (aliases[head]) return resolveApiName(name, aliases, index);
   const localType = locals[head];
   if (localType) {
@@ -468,10 +468,10 @@ function annotateLineTokens(
 
 /**
  * Annotate one prism-rendered line of tokens: each identifier piece gets
- * `apiId` when it resolves against the index, so `CPU` in `driver.CPU()`
- * resolves to `max.driver.CPU` once `from max import driver` is seen, and
- * `id` in `device.id` resolves to the inherited `max.driver.Device.id`
- * once `device = driver.Accelerator()` is. Returns a new array; never
+ * `apiId` when it resolves against the index, so `dumps` in `json.dumps()`
+ * resolves to `json.dumps` once `import json` is seen, and `name` in
+ * `config.name` resolves to the inherited `pathlib.PurePath.name` once
+ * `config = Path("app.toml")` is. Returns a new array; never
  * mutates the input.
  *
  * @param line The line's prism tokens.

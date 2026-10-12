@@ -4,9 +4,9 @@
  *
  * The parse functions read a whole code snippet and extract binding
  * structure (imports, inferred local types, bound names) so each identifier
- * token can be resolved with real context: `from max.graph import Graph`
- * makes bare `Graph` mean `max.graph.Graph`, and `device =
- * driver.Accelerator()` makes `device.id` mean `max.driver.Device.id`.
+ * token can be resolved with real context: `from pathlib import Path`
+ * makes bare `Path` mean `pathlib.Path`, and `config = Path("app.toml")`
+ * makes `config.name` mean `pathlib.PurePath.name`.
  */
 
 /** Does this language tag mean Python? Doctest (`pycon`) included. */

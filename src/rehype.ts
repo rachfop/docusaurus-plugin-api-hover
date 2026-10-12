@@ -34,8 +34,8 @@ interface RehypeQuickinfoOptions {
    */
   dataFile?: string;
   /**
-   * Id prefixes that win a short-name collision, e.g. `["max."]` on a site
-   * that indexes both MAX symbols and Python stdlib ids.
+   * Id prefixes that win a short-name collision, e.g. `["mypkg."]` on a
+   * site that indexes both its own package and Python stdlib ids.
    * @default []
    */
   preferPrefixes?: string[];
@@ -43,7 +43,7 @@ interface RehypeQuickinfoOptions {
    * Pages to leave unannotated: a string matches when the page's source
    * path contains it, a RegExp when it matches the path. Use it for
    * reference pages of another language or another version of the API
-   * than the index describes, e.g. `['/api/mojo/', 'versioned_docs/']`.
+   * than the index describes, e.g. `['/api/rust/', 'versioned_docs/']`.
    * @default []
    */
   exclude?: Array<string | RegExp>;
