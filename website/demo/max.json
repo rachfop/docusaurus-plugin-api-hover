@@ -1,0 +1,50 @@
+{
+  "source": "Real MAX entries from the Modular docs hover index, for the live example on the introduction page.",
+  "ids": [
+    "max.driver.CPU",
+    "max.driver.Accelerator",
+    "max.driver.Device",
+    "max.driver.Device.id",
+    "max.driver.accelerator_count"
+  ],
+  "bases": {
+    "max.driver.Accelerator": [
+      "max.driver.Device"
+    ],
+    "max.driver.CPU": [
+      "max.driver.Device"
+    ]
+  },
+  "info": {
+    "max.driver.CPU": {
+      "kind": "class",
+      "sig": "class max.driver.CPU(id: int = -1)",
+      "doc": "Creates a CPU device.",
+      "url": "https://max.modular.com/api/python/generated/max.driver.CPU/#max.driver.CPU"
+    },
+    "max.driver.Accelerator": {
+      "kind": "class",
+      "sig": "class max.driver.Accelerator(id: int = -1)",
+      "doc": "Creates an accelerator device with the specified ID and memory limit.",
+      "url": "https://max.modular.com/api/python/generated/max.driver.Accelerator/#max.driver.Accelerator"
+    },
+    "max.driver.Device": {
+      "kind": "class",
+      "sig": "class max.driver.Device",
+      "doc": "Represents a compute device available for tensor operations.",
+      "url": "https://max.modular.com/api/python/generated/max.driver.Device/#max.driver.Device"
+    },
+    "max.driver.Device.id": {
+      "kind": "property",
+      "sig": "property id",
+      "doc": "Returns a zero-based device id.",
+      "url": "https://max.modular.com/api/python/generated/max.driver.Device/#max.driver.Device.id"
+    },
+    "max.driver.accelerator_count": {
+      "kind": "function",
+      "sig": "max.driver.accelerator_count() → int",
+      "doc": "Returns number of accelerator devices available.",
+      "url": "https://max.modular.com/api/python/generated/max.driver.accelerator_count/#max.driver.accelerator_count"
+    }
+  }
+}

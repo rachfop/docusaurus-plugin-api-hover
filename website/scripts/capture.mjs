@@ -15,7 +15,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 const PORT = 4199;
 const urlPath = process.argv.includes('--url-path')
   ? process.argv[process.argv.indexOf('--url-path') + 1]
-  : '/quickinfo/api-reference';
+  : '/quickinfo/';
 const url = `http://127.0.0.1:${PORT}${urlPath}`;
 
 async function run(cmd, args, opts = {}) {

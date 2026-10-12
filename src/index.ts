@@ -13,6 +13,7 @@ export {
   isAnnotatedLanguage,
   resolveApiName,
   resolveDotted,
+  isExternalHref,
   resolveHref,
   resolveMember,
   resolveProseMention,

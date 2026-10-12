@@ -11,8 +11,8 @@
  *
  * Usage:
  *   node scripts/capture-hover.mjs \
- *     --url http://localhost:4173/quickinfo/api-reference \
- *     --symbol buildIndex \
+ *     --url http://localhost:4173/quickinfo/ \
+ *     --symbol max.driver.CPU \
  *     --light ../media/hover-light.png,public/hover-light.png \
  *     --dark  ../media/hover-dark.png,public/hover-dark.png
  *
@@ -28,8 +28,8 @@ function arg(name, fallback) {
   return i !== -1 ? process.argv[i + 1] : fallback;
 }
 
-const url = arg('url', 'http://localhost:4173/quickinfo/api-reference');
-const symbol = arg('symbol', 'buildIndex');
+const url = arg('url', 'http://localhost:4173/quickinfo/');
+const symbol = arg('symbol', 'max.driver.CPU');
 const lightOuts = (arg('light', '../media/hover-light.png,public/hover-light.png') || '')
   .split(',')
   .filter(Boolean);
@@ -69,7 +69,13 @@ async function capture(page, theme) {
   );
   await page.waitForTimeout(150);
 
-  const anchorBox = await page.locator(target).first().boundingBox();
+  // Frame the whole code block when the symbol is in one, so the shot
+  // shows the snippet the hover resolves against; prose frames the token.
+  const anchorBox = await page.locator(target).first().evaluate((el) => {
+    const frame = el.closest('figure') ?? el.closest('pre') ?? el;
+    const r = frame.getBoundingClientRect();
+    return { x: r.x, y: r.y, width: r.width, height: r.height };
+  });
   const tooltipBox = await page.locator('.quickinfo-tooltip').boundingBox();
   if (!anchorBox || !tooltipBox) throw new Error('missing anchor or tooltip box');
   const clip = {

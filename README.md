@@ -25,7 +25,7 @@ Sphinx and MkDocs, `quickinfo build` writes both from the built site.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="media/hover-dark.png">
-  <img src="media/hover-light.png" alt="Hovering the buildIndex mention on the plugin's own API reference page shows a tooltip with its kind badge, full name, signature, doc summary, and a reference-page link.">
+  <img src="media/hover-light.png" alt="Hovering CPU in a MAX code example on quickinfo's docs site shows a tooltip with the CLASS badge, the full name max.driver.CPU, its signature, its doc summary, and a link to its reference page.">
 </picture>
 
 The screenshot is captured from quickinfo's own docs site, where the hovers

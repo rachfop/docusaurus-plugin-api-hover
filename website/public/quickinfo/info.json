@@ -16,22 +16,10 @@
     "doc": "Options for the Docusaurus plugin, passed in docusaurus.config.js.",
     "url": "../api-reference#pluginoptions"
   },
-  "PluginOptions.dataFile": {
-    "kind": "option",
-    "sig": "dataFile?: string",
-    "doc": "Path to the names JSON your index generator writes, relative to the site directory. Shape: {ids: string[], bases?: Record<string, string[]>, version?: string}. Default: 'static/quickinfo/names.json'.",
-    "url": "../api-reference#pluginoptions"
-  },
   "dataFile": {
     "kind": "option",
     "sig": "dataFile?: string",
     "doc": "Path to the names JSON your index generator writes, relative to the site directory. Shape: {ids: string[], bases?: Record<string, string[]>, version?: string}. Default: 'static/quickinfo/names.json'.",
-    "url": "../api-reference#pluginoptions"
-  },
-  "PluginOptions.infoUrl": {
-    "kind": "option",
-    "sig": "infoUrl?: string",
-    "doc": "URL the runtime fetches the info JSON from, with ?v=<version> appended from the names JSON. A root-relative URL gets the site's baseUrl prefixed. Default: '/quickinfo/info.json'.",
     "url": "../api-reference#pluginoptions"
   },
   "infoUrl": {
@@ -40,34 +28,16 @@
     "doc": "URL the runtime fetches the info JSON from, with ?v=<version> appended from the names JSON. A root-relative URL gets the site's baseUrl prefixed. Default: '/quickinfo/info.json'.",
     "url": "../api-reference#pluginoptions"
   },
-  "PluginOptions.preferPrefixes": {
-    "kind": "option",
-    "sig": "preferPrefixes?: string[]",
-    "doc": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids. Keeps secondary id sources from changing existing annotations. Default: [].",
-    "url": "../api-reference#pluginoptions"
-  },
   "preferPrefixes": {
     "kind": "option",
     "sig": "preferPrefixes?: string[]",
     "doc": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids. Keeps secondary id sources from changing existing annotations. Default: [].",
     "url": "../api-reference#pluginoptions"
   },
-  "PluginOptions.languages": {
-    "kind": "option",
-    "sig": "languages?: string[]",
-    "doc": "Language modules to enable for code annotation. Built in: \"python\". Default: ['python'].",
-    "url": "../api-reference#pluginoptions"
-  },
   "languages": {
     "kind": "option",
     "sig": "languages?: string[]",
     "doc": "Language modules to enable for code annotation. Built in: \"python\". Default: ['python'].",
-    "url": "../api-reference#pluginoptions"
-  },
-  "PluginOptions.exclude": {
-    "kind": "option",
-    "sig": "exclude?: string[]",
-    "doc": "Route prefixes whose code blocks stay unannotated, under the site's baseUrl: pages for another language or another version of the API than the index describes, e.g. ['/stable/', '/api/mojo/']. Pass the same pages to the rehype pass's exclude. Default: [].",
     "url": "../api-reference#pluginoptions"
   },
   "exclude": {
@@ -93,24 +63,6 @@
     "doc": "Options for the rehype pass, passed in the markdown config.",
     "url": "../api-reference#rehypequickinfooptions"
   },
-  "RehypeQuickinfoOptions.dataFile": {
-    "kind": "option",
-    "sig": "dataFile?: string",
-    "doc": "Path to the names JSON your index generator writes. A relative path resolves against the site directory (the nearest folder above each page holding a docusaurus.config.*), the same base the plugin uses. Default: 'static/quickinfo/names.json'.",
-    "url": "../api-reference#rehypequickinfooptions"
-  },
-  "RehypeQuickinfoOptions.preferPrefixes": {
-    "kind": "option",
-    "sig": "preferPrefixes?: string[]",
-    "doc": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids. Default: [].",
-    "url": "../api-reference#rehypequickinfooptions"
-  },
-  "RehypeQuickinfoOptions.exclude": {
-    "kind": "option",
-    "sig": "exclude?: Array<string | RegExp>",
-    "doc": "Pages to leave unannotated: a string matches when the page's source path contains it, a RegExp when it matches the path. Use it for reference pages of another language or another version of the API than the index describes, e.g. ['/api/mojo/', 'versioned_docs/']. Default: [].",
-    "url": "../api-reference#rehypequickinfooptions"
-  },
   "quickinfo": {
     "kind": "integration",
     "sig": "quickinfo(options?: quickinfo.QuickinfoAstroOptions): quickinfo.QuickinfoIntegration",
@@ -122,34 +74,10 @@
     "doc": "Options for the Astro integration, passed to quickinfo().",
     "url": "../api-reference#quickinfoastrooptions"
   },
-  "QuickinfoAstroOptions.namesUrl": {
-    "kind": "option",
-    "sig": "namesUrl?: string",
-    "doc": "URL the browser fetches the names JSON from. A root-relative URL gets the site's base prefixed. Shape: {ids: string[], bases?: Record<string, string[]>, version?: string}. Default: '/quickinfo/names.json'.",
-    "url": "../api-reference#quickinfoastrooptions"
-  },
   "namesUrl": {
     "kind": "option",
     "sig": "namesUrl?: string",
     "doc": "URL the browser fetches the names JSON from. A root-relative URL gets the site's base prefixed. Shape: {ids: string[], bases?: Record<string, string[]>, version?: string}. Default: '/quickinfo/names.json'.",
-    "url": "../api-reference#quickinfoastrooptions"
-  },
-  "QuickinfoAstroOptions.infoUrl": {
-    "kind": "option",
-    "sig": "infoUrl?: string",
-    "doc": "URL the runtime fetches the info JSON from, with ?v=<version> appended from the names JSON. A root-relative URL gets the site's base prefixed. Default: '/quickinfo/info.json'.",
-    "url": "../api-reference#quickinfoastrooptions"
-  },
-  "QuickinfoAstroOptions.preferPrefixes": {
-    "kind": "option",
-    "sig": "preferPrefixes?: string[]",
-    "doc": "Id prefixes that win a short-name collision, e.g. [\"max.\"] on a site that indexes both MAX symbols and Python stdlib ids. Default: [].",
-    "url": "../api-reference#quickinfoastrooptions"
-  },
-  "QuickinfoAstroOptions.languages": {
-    "kind": "option",
-    "sig": "languages?: string[]",
-    "doc": "Language modules to enable for code annotation. Built in: \"python\". Default: ['python'].",
     "url": "../api-reference#quickinfoastrooptions"
   },
   "ScriptAttributes": {
@@ -261,7 +189,7 @@
   "resolveHref": {
     "kind": "function",
     "sig": "resolveHref(href: string, index: SymbolIndex): string | undefined",
-    "doc": "Extract a symbol id from a link to an API page on the same site. A fragment naming a symbol wins (graph.html#max.graph.Graph, the shape Sphinx and mkdocstrings emit); otherwise the page path's last segment (/api/python/generated/<id>.md, <id>/) names it. Links with a scheme or host (https://docs.python.org/...#int) point at another site's symbols and never resolve, and only ids in the index count.",
+    "doc": "Extract a symbol id from a link to an API page on the same site. A fragment naming a symbol wins (graph.html#max.graph.Graph, the shape Sphinx and mkdocstrings emit); otherwise the page path's last segment names it when it reads as a symbol page: a dotted id (max.graph.Graph/) or a Markdown file (Graph.md). A plain path segment (/quickinfo/, a site's own base path) is a page, not a symbol. Links with a scheme or host (https://docs.python.org/...#int) point at another site's symbols and never resolve, and only ids in the index count.",
     "url": "../api-reference#resolvehref"
   },
   "resolveDotted": {
@@ -438,5 +366,35 @@
     "sig": "version?: string",
     "doc": "",
     "url": "../api-reference#packednames"
+  },
+  "max.driver.CPU": {
+    "kind": "class",
+    "sig": "class max.driver.CPU(id: int = -1)",
+    "doc": "Creates a CPU device.",
+    "url": "https://max.modular.com/api/python/generated/max.driver.CPU/#max.driver.CPU"
+  },
+  "max.driver.Accelerator": {
+    "kind": "class",
+    "sig": "class max.driver.Accelerator(id: int = -1)",
+    "doc": "Creates an accelerator device with the specified ID and memory limit.",
+    "url": "https://max.modular.com/api/python/generated/max.driver.Accelerator/#max.driver.Accelerator"
+  },
+  "max.driver.Device": {
+    "kind": "class",
+    "sig": "class max.driver.Device",
+    "doc": "Represents a compute device available for tensor operations.",
+    "url": "https://max.modular.com/api/python/generated/max.driver.Device/#max.driver.Device"
+  },
+  "max.driver.Device.id": {
+    "kind": "property",
+    "sig": "property id",
+    "doc": "Returns a zero-based device id.",
+    "url": "https://max.modular.com/api/python/generated/max.driver.Device/#max.driver.Device.id"
+  },
+  "max.driver.accelerator_count": {
+    "kind": "function",
+    "sig": "max.driver.accelerator_count() → int",
+    "doc": "Returns number of accelerator devices available.",
+    "url": "https://max.modular.com/api/python/generated/max.driver.accelerator_count/#max.driver.accelerator_count"
   }
 }

@@ -16,13 +16,22 @@ closes it.
 quickinfo works with Docusaurus, Astro and Blume, Sphinx, MkDocs, and any
 other static site generator.
 
-![Hovering the buildIndex mention on this site's API reference page shows a tooltip with the FUNCTION badge, the full name, its signature, its doc summary, and a link to the reference page.](/hover-light.png)
+![Hovering CPU in a MAX code example shows a tooltip with the CLASS badge, the full name max.driver.CPU, its signature, its doc summary, and a link to its reference page.](/hover-light.png)
 
-Resolution is snippet-aware. After `from max import driver`, the name
-`driver.CPU` resolves to `max.driver.CPU`. After
-`device = driver.Accelerator()`, the attribute `device.id` resolves to
-`max.driver.Device.id`: `Accelerator` doesn't define `id` itself, so
-quickinfo follows its documented base class, `Device`.
+Resolution is snippet-aware. Hover the names in this example, which uses
+real data from the MAX Python API:
+
+```python
+from max import driver
+
+device = driver.Accelerator()
+print(device.id)
+cpu = driver.CPU()
+```
+
+`driver.CPU` resolves to `max.driver.CPU` through the import. `device.id`
+resolves to `max.driver.Device.id`: `device` holds an `Accelerator`, which
+inherits `id` from its documented base class, `Device`.
 
 ## Set up your site
 
