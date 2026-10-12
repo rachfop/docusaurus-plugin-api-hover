@@ -46,9 +46,21 @@ output works under any deploy path.
 Code blocks in Python (`python`, `py`, `pycon`, and Sphinx's default
 highlighting) resolve against the snippet's imports and bindings, as
 [symbol resolution](/resolution) describes. Cross-references such as
-`` :class:`mypkg.Graph` `` take their symbol from the link target, and inline
-literals resolve by name. Links in the sidebar and table of contents stay
-plain.
+`` :class:`max.graph.Graph` `` take their symbol from the link target, and
+inline literals resolve by name. Links in the sidebar and table of contents
+stay plain.
+
+For example, a guide page with this block, on a site that documents MAX,
+gets a hover on every API name. Hover them here:
+
+```python
+from max.graph import Graph, TensorType, ops
+from max.dtype import DType
+
+with Graph("demo") as graph:
+    x = graph.inputs[0]
+    graph.output(ops.relu(x))
+```
 
 Tooltips follow the theme's light and dark palette on Furo. On other
 themes, set the [`--quickinfo-*` color variables](/script-tag#colors).
