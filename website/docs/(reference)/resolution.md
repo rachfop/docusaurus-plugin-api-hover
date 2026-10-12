@@ -1,5 +1,5 @@
 ---
-title: How names resolve
+title: Symbol resolution
 description: The matching rules that map identifiers in code and prose to indexed symbols.
 ---
 

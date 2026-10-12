@@ -41,6 +41,6 @@ for your site generator:
   with symbol data you generate.
 
 Every setup reads the names JSON and info JSON. [Index files](/index-files)
-defines their schemas, and [how names resolve](/resolution) covers the
+defines their schemas, and [symbol resolution](/resolution) covers the
 matching rules. The [API reference](/api-reference) documents every export
 and option.
