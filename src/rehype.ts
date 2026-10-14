@@ -180,10 +180,20 @@ function rehypeQuickinfo(
     // symbol, so its inline code stays plain; inline code in other
     // same-site links resolves by name in pass 2.
     const linked = new WeakSet<HastElement>();
+    // Headings are navigation: a section heading names the symbol whose
+    // docs begin right below it, so marking it with the hover affordance
+    // is noise. Collect everything inside a heading and skip both passes.
+    const inHeading = new WeakSet<Node>();
+    visit(tree, 'element', (node: HastElement) => {
+      if (!node || !/^h[1-6]$/.test(node.tagName)) return;
+      visit(node, 'element', (child: HastElement) => {
+        inHeading.add(child);
+      });
+    });
 
     // Pass 1: links.
     visit(tree, 'element', (node: HastElement) => {
-      if (!node || node.tagName !== 'a') return;
+      if (!node || node.tagName !== 'a' || inHeading.has(node)) return;
       const href = node.properties && node.properties.href;
       const id = typeof href === 'string' ? resolveHref(href, index) : undefined;
       const external = typeof href === 'string' && isExternalHref(href);
@@ -219,7 +229,13 @@ function rehypeQuickinfo(
 
     // Pass 2: plain mentions resolved by name.
     visit(tree, 'element', (node: HastElement, _index, parent: Parent) => {
-      if (!node || !isMentionElement(node) || !parent || (parent as HastElement).tagName === 'pre')
+      if (
+        !node ||
+        !isMentionElement(node) ||
+        !parent ||
+        (parent as HastElement).tagName === 'pre' ||
+        inHeading.has(node)
+      )
         return;
       if (linked.has(node) || node.properties?.dataApiId) return;
       if (!node.children || node.children.length === 0) return;

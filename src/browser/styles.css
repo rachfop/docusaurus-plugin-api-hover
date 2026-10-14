@@ -1,9 +1,16 @@
 /**
  * Styles for quickinfo hovers (see browser/hover.ts).
  *
- * Hoverable identifiers get a dotted underline; hovering highlights every
- * instance of the same symbol on the page and opens an IDE-style tooltip
- * with the signature and docstring summary.
+ * Hoverable identifiers get a dashed underline in the accent color;
+ * hovering highlights every instance of the same symbol on the page and
+ * opens an IDE-style tooltip with the signature and docstring summary.
+ *
+ * The underline is the affordance: it must predict, before the hover,
+ * which mentions open a card. That makes visibility the requirement. A
+ * muted grey reads as decoration, and on sites whose links are
+ * solid-underlined the dashed style is the only visible difference
+ * between "hover me" and "click me", so the default color is the accent
+ * the tooltip itself uses.
  *
  * Colors come from the `--quickinfo-*` variables below, which default to
  * the host theme's own palette: Docusaurus (`--ifm-*`), MkDocs Material
@@ -27,10 +34,14 @@
     var(--md-default-fg-color--lightest, var(--color-background-border, var(--blume-border, #bbb)))
   );
   --quickinfo-underline: var(
-    --ifm-color-emphasis-400,
+    --ifm-color-primary,
+    var(--md-accent-fg-color, var(--color-brand-primary, var(--blume-accent, #02a17e)))
+  );
+  --quickinfo-muted: var(
+    --ifm-color-emphasis-600,
     var(
       --md-default-fg-color--light,
-      var(--color-foreground-muted, var(--blume-muted-foreground, #999))
+      var(--color-foreground-muted, var(--blume-muted-foreground, #888))
     )
   );
   --quickinfo-highlight: var(
@@ -65,9 +76,9 @@
  * touch devices the annotation stays inert. */
 @media (hover: hover) {
   [data-api-id] {
-    text-decoration: underline dotted;
+    text-decoration: underline dashed;
     text-decoration-color: var(--quickinfo-underline);
-    text-decoration-thickness: 1px;
+    text-decoration-thickness: 1.5px;
     text-underline-offset: 3px;
     text-decoration-skip-ink: none;
   }
@@ -135,6 +146,16 @@
   font-family: var(--quickinfo-mono);
   font-size: 0.85rem;
   word-break: break-all;
+}
+
+/* The qualified id reads as a locator, like the breadcrumb trail above a
+ * page: the path leading to the symbol is muted and the final segment is
+ * the name. The head row stays secondary to the signature block below,
+ * and the muted path drops the "is this clickable?" ambiguity of a
+ * uniformly emphasized dotted name. */
+.quickinfo-path {
+  color: var(--quickinfo-muted);
+  font-size: 0.75rem;
 }
 
 .quickinfo-sig {

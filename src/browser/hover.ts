@@ -36,7 +36,7 @@ const TOOLTIP_MARGIN_PX = 8;
 /** Height assumed before the first measure; corrected before first paint. */
 const TOOLTIP_ESTIMATED_HEIGHT = 240;
 /** Tooltip delay: show after the pointer rests this long on a symbol. */
-const HOVER_DELAY_MS = 240;
+const HOVER_DELAY_MS = 150;
 /** Pointer movement beyond this resets the delay (cursor "passing through"). */
 const HOVER_MOVE_TOLERANCE_PX = 6;
 /**
@@ -161,7 +161,14 @@ function renderTooltip(id: string, info: InfoEntry | null | undefined, anchor: E
   el.id = TOOLTIP_ID;
   el.className = 'quickinfo-tooltip';
   el.setAttribute('role', 'tooltip');
-  el.innerHTML = `<div class="quickinfo-head">${badge}<code class="quickinfo-name">${escapeHtml(id)}</code></div>${body}`;
+  // The qualified id reads as a locator: muted path, emphasized leaf.
+  // Segments keep their real separators (a Python "path" is dotted), so
+  // the id stays accurate to copy, and the leaf alone carries weight.
+  const lastDot = id.lastIndexOf('.');
+  const leaf = escapeHtml(id.slice(lastDot + 1));
+  const path =
+    lastDot > 0 ? `<span class="quickinfo-path">${escapeHtml(id.slice(0, lastDot))}.</span>` : '';
+  el.innerHTML = `<div class="quickinfo-head">${badge}<code class="quickinfo-name">${path}${leaf}</code></div>${body}`;
   const link = el.querySelector<HTMLAnchorElement>('.quickinfo-link');
   // Clicking the reference is a decisive act: close the tooltip so it
   // can't linger over the page it jumps to.
@@ -466,6 +473,17 @@ export function startHover(config: HoverConfig): void {
   // Viewport size changed: re-anchor to the token and re-measure the
   // tooltip (its max-height is viewport-relative, so the box may resize).
   window.addEventListener('resize', onScroll, { passive: true });
+  // The info JSON decides whether the first hover renders a card or a
+  // "Loading…" placeholder; fetch it while the reader is still scanning,
+  // so the first pointer rest is as instant as the rest. The fetch shares
+  // the memoized promise fetchInfoJson caches; a failure is caught here
+  // and the memoized rejection dropped so a hover retries.
+  const warm = () => void fetchInfoJson().catch(() => undefined);
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(warm, { timeout: 2000 });
+  } else {
+    setTimeout(warm, 300);
+  }
 }
 
 /** Whether a node belongs to the tooltip; the DOM annotator ignores it. */

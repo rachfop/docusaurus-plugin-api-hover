@@ -110,9 +110,18 @@ export function annotateDocument(
   if (options.languages.includes('python')) annotateCodeBlocks(index, options, root);
 }
 
+/** Headings are navigation: a section heading names the symbol whose docs
+ * begin right below it, so the hover affordance there is noise. */
+const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6';
+
 function annotateLinks(index: SymbolIndex, root: ParentNode): void {
   for (const link of Array.from(root.querySelectorAll('a[href]'))) {
-    if (link.closest('pre') || link.hasAttribute('data-api-id') || link.closest(CHROME_SELECTOR)) {
+    if (
+      link.closest('pre') ||
+      link.hasAttribute('data-api-id') ||
+      link.closest(CHROME_SELECTOR) ||
+      link.closest(HEADING_SELECTOR)
+    ) {
       continue;
     }
     const href = link.getAttribute('href') ?? '';
@@ -143,7 +152,12 @@ function annotateInlineCode(index: SymbolIndex, root: ParentNode): void {
   for (const el of Array.from(root.querySelectorAll('code'))) {
     if (resolvedMentions.has(el)) continue;
     resolvedMentions.add(el);
-    if (el.closest('pre') || el.hasAttribute('data-api-id') || el.closest(CHROME_SELECTOR))
+    if (
+      el.closest('pre') ||
+      el.hasAttribute('data-api-id') ||
+      el.closest(CHROME_SELECTOR) ||
+      el.closest(HEADING_SELECTOR)
+    )
       continue;
     const text = (el.textContent ?? '').trim();
     if (!text) continue;
