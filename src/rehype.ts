@@ -185,7 +185,7 @@ function rehypeQuickinfo(
     // is noise. Collect everything inside a heading and skip both passes.
     const inHeading = new WeakSet<Node>();
     visit(tree, 'element', (node: HastElement) => {
-      if (!node || !/^h[1-6]$/.test(node.tagName)) return;
+      if (!node?.tagName || !/^h[1-6]$/.test(node.tagName)) return;
       visit(node, 'element', (child: HastElement) => {
         inHeading.add(child);
       });
