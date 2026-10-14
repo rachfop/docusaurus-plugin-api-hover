@@ -33,9 +33,13 @@
     --ifm-color-emphasis-300,
     var(--md-default-fg-color--lightest, var(--color-background-border, var(--blume-border, #bbb)))
   );
+  /* The cue borrows the theme's link color, not its brand primary: the
+   * affordance promises interactivity, and a site's link color is the
+   * palette readers already read as interactive. Brand primaries can be
+   * near-black (MAX) while links carry the actual accent. */
   --quickinfo-underline: var(
-    --ifm-color-primary,
-    var(--md-accent-fg-color, var(--color-brand-primary, var(--blume-accent, #02a17e)))
+    --ifm-link-color,
+    var(--md-typeset-a-color, var(--color-link, var(--blume-accent, #02a17e)))
   );
   --quickinfo-muted: var(
     --ifm-color-emphasis-600,
